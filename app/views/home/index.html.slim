@@ -1,0 +1,9 @@
+title Bot
+div
+  img src='/images/q.jpg' alt='' id='img'
+
+  .field
+    = simple_form_for :cmd do |f|
+      = f.label :text
+      br
+      = f.text_field :text, class: 'cmd'
