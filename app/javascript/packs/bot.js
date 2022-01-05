@@ -34,17 +34,17 @@ const commands = {
 }
 
 const allSound = [
-  { name: 'booya', value: '/sounds/booya.wav' },
-  { name: 'ding', value: '/sounds/ding_ding_ding.mp3' },
-  { name: 'faith', value: '/sounds/faith.mp3' },
-  { name: 'goblin', value: '/sounds/goblin.wav' },
-  { name: 'green', value: '/sounds/green.wav' },
-  { name: 'way', value: '/sounds/klk.mp3' },
-  { name: 'dio', value: '/sounds/kono_dio_da.mp3' },
+  // { name: 'ding', value: '/sounds/ding_ding_ding.mp3' },
+  // { name: 'faith', value: '/sounds/faith.mp3' },
+  // { name: 'dio', value: '/sounds/kono_dio_da.mp3' },
+  // { name: 'way', value: '/sounds/klk.mp3' },
   { name: 'mk', value: '/sounds/mk.mp3' },
-  { name: 'meteorit', value: '/sounds/meteorit.wav' },
   { name: 'mgs', value: '/sounds/mgs.mp3' },
-  { name: 'succ', value: '/sounds/succ.mp3' }
+  { name: 'succ', value: '/sounds/succ.mp3' },
+  // { name: 'booya', value: '/sounds/booya.wav' },
+  // { name: 'goblin', value: '/sounds/goblin.wav' },
+  // { name: 'green', value: '/sounds/green.wav' },
+  // { name: 'meteorit', value: '/sounds/meteorit.wav' },
 ]
 
 const client = new tmi.Client(config)
@@ -96,18 +96,28 @@ client.on('chat', (channel, tags, message, self) => {
       client.action(channel, response(tags.username));
     else if (typeof response === 'string')
       client.action(channel, response);
-
-    var soundCommand = message.substring(1);
-    var audio = new Audio('/sounds/' + soundCommand + '.mp3');
-    audio.play();
   };
 
-  if (message.toLowerCase() === '!ping') {
-    ping(client, message, tags, channel, self)
-    return
+  if (message.toLowerCase() === '!succ' || message.toLowerCase() === '!mgs' || message.toLowerCase() === '!mk') {
+    var soundCommand = message.substring(1);
+    var audio = new Audio('/sounds/' + soundCommand + '.mp3');
+    // audio.autoplay = true;
+    // audio.muted = true;
+    audio.volume = 0.1;
+    audio.play();
   }
+  if (message.toLowerCase() === '!ping') {
+    ping(client, message, tags, channel, self);
+    return;
+  }
+  // if (message.toLowerCase() === '!ban') {
+  //   var text = message.toLowerCase();
+  //   var qwe = text.slice(5);
+  //   console.log(qwe);
+  //   client.action(channel, `${qwe} Is permanently banned from this channel`);
+  // }
 
-  onMessageHandler(channel, tags, message, self)
+  onMessageHandler(channel, tags, message, self);
 })
 
 /* FUNCTIONS */
