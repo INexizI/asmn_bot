@@ -110,12 +110,16 @@ client.on('chat', (channel, tags, message, self) => {
     ping(client, message, tags, channel, self);
     return;
   }
-  // if (message.toLowerCase() === '!ban') {
-  //   var text = message.toLowerCase();
-  //   var qwe = text.slice(5);
-  //   console.log(qwe);
-  //   client.action(channel, `${qwe} Is permanently banned from this channel`);
-  // }
+  if (message.toLowerCase().slice(0, 4) === '!ban') {
+    const ban = {
+      1: 'Is permanently banned from this channel',
+      2: 'BAN SMOrc',
+      3: 'BibleThump',
+      4: 'AngelThump'
+    };
+    var n = Math.floor(Math.random() * 4) + 1;
+    client.action(channel, `${message.toLowerCase().slice(5)} ${ban[n]}`);
+  }
 
   onMessageHandler(channel, tags, message, self);
 })
