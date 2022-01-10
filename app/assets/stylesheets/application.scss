@@ -24,10 +24,11 @@ body {
 .profiler-no-controls { display: none; }
 
 .img {
-  width: 500px;
+  display: flex;
+  width: 1000px;
   height: 100vh;
   margin: 0 auto;
-  img {
+  #chat, img {
     width: 500px;
     height: 500px;
   }
