@@ -8,8 +8,9 @@ import Turbolinks from "turbolinks"
 import * as ActiveStorage from "@rails/activestorage"
 import "channels"
 
-require('packs/bot')
-require('packs/tms')
+// require('packs/bot')
+// require('packs/tms')
+// require('packs/spotify')
 require('packs/ch')
 
 Rails.start()
