@@ -8,7 +8,8 @@ html, body {}
 
 body {
   margin: auto;
-  background: #757575;
+  // background: #757575; // my color
+  background: #181818; // spotify bg
   font-family: 'Quicksand', sans-serif;
   font-size: large;
   font-weight: bold;
@@ -31,5 +32,37 @@ body {
   #chat, img {
     width: 500px;
     height: 500px;
+  }
+}
+
+.song {
+  margin: 50px;
+  display: grid;
+  // grid-template-columns: 100px auto;
+  // grid-template-rows: 50px 50px;
+  grid-template-columns: 40px auto;
+  grid-template-rows: 20px 20px;
+  gap: 0px 10px;
+  grid-auto-flow: row;
+  grid-template-areas: "s1 s2" "s1 s3";
+
+  #sp-albumImg, #sp-albumImg img  {
+    width: 40px;
+    height: 40px;
+  }
+  #sp-albumImg {
+    grid-area: s1;
+  }
+  #sp-title {
+    grid-area: s2;
+    color: #1db954;
+    font-size: 16px;
+    font-weight: 400;
+  }
+  #sp-artist {
+    grid-area: s3;
+    color: #fff;
+    font-size: 14px;
+    font-weight: 400;
   }
 }

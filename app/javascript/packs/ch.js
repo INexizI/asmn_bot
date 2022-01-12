@@ -28,69 +28,55 @@
       return x
     }
 
-    // const getAccessToken = async () => {
-    //   // request options
-    //   const options = {
-    //     method: 'POST',
-    //     body: queryString.stringify({
-    //       grant_type: 'refresh_token',
-    //       refresh_token,
-    //     }),
-    //     headers: {
-    //       Authorization: `Basic ${basic}`,
-    //       'Content-Type': 'application/x-www-form-urlencoded',
-    //     }
-    //   }
-    //   // send post request
-    //   const response = await fetch(TOKEN_ENDPOINT, options)
-    //     .then(res => res.json())
-    //     .then(data => {
-    //       var at = data.access_token
-    //       return at
-    //     })
-    //     .catch(err => console.error(err));
-    //
-    //   return response
-    // }
-
-    // export const getNowPlaying = async () => {
-    //   const { access_token } = await getAccessToken();
-    //
-    //   return fetch(NOW_PLAYING_ENDPOINT, {
-    //     headers: {
-    //       Authorization: `Bearer ${access_token}`,
-    //     },
-    //   });
-    // };
     const getNowPlaying = async () => {
-      const { access_token } = await getAccessToken();
+      const { access_token } = await getAccessToken()
 
       return fetch(NOW_PLAYING_ENDPOINT, {
         headers: {
           Authorization: `Bearer ${access_token}`,
-        }
+        },
       })
     }
 
     const spotifyData = async (_, res) => {
-      const response = await getNowPlaying();
-      console.log(response.status);
+      const response = await getNowPlaying()
+      console.log(`response status: ${response.status}`)
 
       if (response.status === 204 || response.status > 400) {
         // return res.status(200).json({ isPlaying: false });
-        console.log(response.status);
+        console.log(`Spotify offline`)
+        $('#sp-title').text(`Spotify offline`)
+      } else if (response.status === 200) {
+        const song = await response.json();
+        // console.log(song);
+        const isPlaying = song.is_playing;
+        if (song.item === null) {
+          $('#sp-title').text(`Current song can't be find`)
+          $('#sp-artist, #sp-albumName, #sp-albumImg, #sp-link').empty()
+        } else {
+          const title = song.item.name;
+          const artist = song.item.artists.map((_artist) => _artist.name).join(', ');
+          // const album = song.item.album.name;
+          const albumImageUrl = song.item.album.images[0].url;
+          const songUrl = song.item.external_urls.spotify;
+          const currentSong = [
+            { isPlaying: isPlaying },
+            { title: title },
+            { artist: artist },
+            // { album: album },
+            { albumImageUrl: albumImageUrl },
+            { songUrl: songUrl }
+          ]
+          // console.log(currentSong);
+          $('#sp-title').text(title)
+          $('#sp-artist').text(artist)
+          // $('#sp-albumName').text(album)
+          $('#sp-albumImg').html(`<img src="${albumImageUrl}">`)
+          $('#sp-link').html(`<a target="_blank" rel="noopener noreferrer" href="${songUrl}">song here</a>`)
+        }
       }
 
-      const song = await response.json();
-      console.log(song);
-      const isPlaying = song.is_playing;
-      const title = song.item.name;
-      const artist = song.item.artists.map((_artist) => _artist.name).join(', ');
-      const album = song.item.album.name;
-      const albumImageUrl = song.item.album.images[0].url;
-      const songUrl = song.item.external_urls.spotify;
-
-      console.log('123');
+      // setTimeout(spotifyData, 60000)
 
       // return res.status(200).json({
       //   album,
@@ -103,6 +89,11 @@
     }
     spotifyData();
 
-    console.log('123 QWE');
+    $('#btn').click(function() {
+      console.log(`Loading Spotify Data...`);
+      spotifyData();
+    });
+
+    console.log('Spotify API');
   });
 }).call(this);
