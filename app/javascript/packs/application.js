@@ -8,6 +8,8 @@ import Turbolinks from "turbolinks"
 import * as ActiveStorage from "@rails/activestorage"
 import "channels"
 
+import tmi from "tmi.js"
+
 // require('packs/bot')
 // require('packs/tms')
 // require('packs/spotify')

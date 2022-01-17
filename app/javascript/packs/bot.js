@@ -87,7 +87,7 @@ client.on('subgift', (channel, username, streakMonths, recipient, methods, tags)
 
 client.on('chat', (channel, tags, message, self) => {
   if (self) return;
-  if (tags.username === process.env.TWITCH_BOT_USERNAME) return;
+  if (tags.username === 'a_s_m_n') return;
 
   if (message.charAt(0) == '!') {
     const [raw, command, argument] = message.match(regexpCommand);

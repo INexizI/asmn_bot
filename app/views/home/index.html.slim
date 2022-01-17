@@ -1,6 +1,6 @@
 title Bot
 
-/ .img
+.img
   img src='/images/q.jpg' alt=''
 
   // twitch chat
@@ -12,11 +12,12 @@ title Bot
       br
       = f.text_field :text, class: 'cmd'
 
-.song
-  p#sp-albumImg
-  p#sp-title
-  p#sp-artist
-p#sp-link
+div
+  .song
+    p#sp-albumImg
+    p#sp-title
+    p#sp-artist
+  p#sp-link
 
 .btn
   button#btn Update Info
