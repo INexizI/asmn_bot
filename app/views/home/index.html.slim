@@ -4,20 +4,13 @@ title Bot
   img src='/images/q.jpg' alt=''
 
   // twitch chat
-  iframe id="chat" src="https://www.twitch.tv/embed/a_s_m_n/chat?parent=localhost" frameborder="0"
-
-  / .field
-    = simple_form_for :cmd do |f|
-      = f.label :text
-      br
-      = f.text_field :text, class: 'cmd'
+  / iframe id="chat" src="https://www.twitch.tv/embed/a_s_m_n/chat?parent=localhost" frameborder="0"
 
 div
   .song
     p#sp-albumImg
     p#sp-title
     p#sp-artist
-  p#sp-link
 
 .btn
   button#btn Update Info

@@ -48,7 +48,6 @@
         $('#sp-title').text(`Spotify offline`)
       } else if (response.status === 200) {
         const song = await response.json();
-        console.log(song);
         const isPlaying = song.is_playing;
         if (song.item === null) {
           $('#sp-title').text(`Current song can't be find`)
@@ -71,14 +70,7 @@
           $('#sp-artist').text(artist)
           // $('#sp-albumName').text(album)
           $('#sp-albumImg').html(`<img src="${albumImageUrl}">`)
-          $('#sp-link').html(`<a target="_blank" rel="noopener noreferrer" href="${songUrl}">song here</a>`)
         }
-        // const isPlaying = song.is_playing;
-        // const title = song.item.name;
-        // const artist = song.item.artists.map((_artist) => _artist.name).join(', ');
-        // const album = song.item.album.name;
-        // const albumImageUrl = song.item.album.images[0].url;
-        // const songUrl = song.item.external_urls.spotify;
 
         const qq = song.item;
         return qq
@@ -230,6 +222,7 @@
     }
     function onMessageHandler (channel, tags, message, self) {
       // checkTwitchChat(tags, message, channel)
+      console.log(`${tags.username}: ${message}`);
     }
     function onHostedHandler (channel, username, viewers, autohost) {
       client.say(channel,
@@ -293,9 +286,8 @@
     function song(client, message, tags, channel, self) {
       const getSong = async () => {
         const cs = await spotifyData();
-        console.log(cs);
-        client.action(channel, `@${tags.username}, ${cs.artists.map((_artist) => _artist.name).join(', ')} - ${cs.name} ${cs.external_urls.spotify} 👈`)
-        // client.action(channel, `qwe`)
+        if (typeof cs !== 'undefined')
+          client.action(channel, `@${tags.username}, ${cs.artists.map((_artist) => _artist.name).join(', ')} - ${cs.name} 👉 ${cs.external_urls.spotify} 👈`)
       }
       getSong()
     }
