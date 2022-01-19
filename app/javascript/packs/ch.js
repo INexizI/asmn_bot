@@ -222,7 +222,10 @@
     }
     function onMessageHandler (channel, tags, message, self) {
       // checkTwitchChat(tags, message, channel)
-      console.log(`${tags.username}: ${message}`);
+      // console.log(`${tags.username}: ${message}`);
+      // console.log(tags);
+      $('.chat').append(`<p><span style="color: ${tags.color}" id="ch-user">${tags['display-name']}: </span><span id="ch-msg">${message}</span></p>`);
+      clearChat()
     }
     function onHostedHandler (channel, username, viewers, autohost) {
       client.say(channel,
@@ -274,6 +277,15 @@
       // client.say(channel,
       //   `${username} has gifted ${senderCount} subs!`
       // )
+    }
+    function clearChat() {
+      let msg_limit = $('.chat').children(':first')
+      if ($('.chat p').length >= 5) {
+        msg_limit.fadeOut(1600, 'linear')
+        setTimeout(function() {
+          msg_limit.remove()
+        }, 3000)
+      }
     }
 
     /* COMMANDS */
