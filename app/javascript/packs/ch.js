@@ -170,7 +170,7 @@
 
     client.on('chat', (channel, tags, message, self) => {
       if (self) return;
-      if (tags.username === 'a_s_m_n') return;
+      // if (tags.username === 'a_s_m_n') return;
 
       if (message.charAt(0) == '!') {
         const [raw, command, argument] = message.match(regexpCommand);
@@ -224,7 +224,7 @@
       // checkTwitchChat(tags, message, channel)
       // console.log(`${tags.username}: ${message}`);
       // console.log(tags);
-      $('.chat').append(`<p><span style="color: ${tags.color}" id="ch-user">${tags['display-name']}: </span><span id="ch-msg">${message}</span></p>`);
+      $('.chat').append(`<p>${(tags.mod == true ? '<img src="https://static-cdn.jtvnw.net/badges/v1/3267646d-33f0-4b17-b3df-f923a41db1d0/1" id="ch-badge">' : '<span>ICON </span>')}<span style="color: ${tags.color}" id="ch-user">${tags['display-name']}: </span><span id="ch-msg">${message}</span></p>`);
       clearChat()
     }
     function onHostedHandler (channel, username, viewers, autohost) {
