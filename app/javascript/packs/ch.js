@@ -3,11 +3,11 @@
     const queryString = require('query-string')
     const Buffer = require('buffer/').Buffer
 
-    const client_id = 'c79d615a151e4d6fbb37a0f3468ff3c9';
-    const client_secret = '4e4a37e225654065bff02e3954a8b2fd';
-    const refresh_token = 'AQCuORMiFq2ETN1CQX9UR5B5IrezZq5hTo1Rz0csk84ciKvJgTn-RKxXKUkZzhGt2as3XoqtGqnod4QxlNw4NSLrWiKM0EAoKKYLIloaxbOinRxIP7WYcyC59hLapOClI8s';
+    const spotify_client_id = 'c79d615a151e4d6fbb37a0f3468ff3c9';
+    const spotify_client_secret = '4e4a37e225654065bff02e3954a8b2fd';
+    const spotify_refresh_token = 'AQCuORMiFq2ETN1CQX9UR5B5IrezZq5hTo1Rz0csk84ciKvJgTn-RKxXKUkZzhGt2as3XoqtGqnod4QxlNw4NSLrWiKM0EAoKKYLIloaxbOinRxIP7WYcyC59hLapOClI8s';
 
-    const basic = Buffer.from(`${client_id}:${client_secret}`).toString('base64');
+    const basic = Buffer.from(`${spotify_client_id}:${spotify_client_secret}`).toString('base64');
     const NOW_PLAYING_ENDPOINT = `https://api.spotify.com/v1/me/player/currently-playing`;
     const TOKEN_ENDPOINT = `https://accounts.spotify.com/api/token`;
 
@@ -20,7 +20,7 @@
         },
         body: queryString.stringify({
           grant_type: 'refresh_token',
-          refresh_token: refresh_token
+          refresh_token: spotify_refresh_token
         }),
       });
 
@@ -100,7 +100,7 @@
       channels: [ 'a_s_m_n' ],
       identity: {
         username: 'a_s_m_n',
-        password: 'oauth:a080402tz6v7cvhw67dgrg7j99l7bt' /* separated you and bot */
+        password: 'oauth:5diz1wlegy31xl3aykabd40ztqvxm0' /* separated you and bot */
       }
     }
 
@@ -224,8 +224,15 @@
       // checkTwitchChat(tags, message, channel)
       // console.log(`${tags.username}: ${message}`);
       // console.log(tags);
-      $('.chat').append(`<p>${(tags.mod == true ? '<img src="https://static-cdn.jtvnw.net/badges/v1/3267646d-33f0-4b17-b3df-f923a41db1d0/1" id="ch-badge">' : '<span>ICON </span>')}<span style="color: ${tags.color}" id="ch-user">${tags['display-name']}: </span><span id="ch-msg">${message}</span></p>`);
-      clearChat()
+      const moderator = 'https://static-cdn.jtvnw.net/badges/v1/3267646d-33f0-4b17-b3df-f923a41db1d0/1'
+      const broadcaster = 'https://static-cdn.jtvnw.net/badges/v1/5527c58c-fb7d-422d-b71b-f309dcb85cc1/1'
+      $('.chat').append(
+        `<p>
+          ${(tags.mod == true ? '<img src=' + moderator + ' id="ch-badge">' : '')}
+          <span style="color: ${tags.color}" id="ch-user">${tags['display-name']}: </span>
+          <span id="ch-msg">${message}</span>
+          </p>`
+        );
     }
     function onHostedHandler (channel, username, viewers, autohost) {
       client.say(channel,
@@ -280,11 +287,11 @@
     }
     function clearChat() {
       let msg_limit = $('.chat').children(':first')
-      if ($('.chat p').length >= 5) {
-        msg_limit.fadeOut(1600, 'linear')
+      if ($('.chat p').length > 5) {
+        msg_limit.fadeOut('fast')
         setTimeout(function() {
           msg_limit.remove()
-        }, 3000)
+        }, 2000)
       }
     }
 
