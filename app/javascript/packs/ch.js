@@ -3,13 +3,14 @@
     const queryString = require('query-string')
     const Buffer = require('buffer/').Buffer
 
-    const spotify_client_id = 'c79d615a151e4d6fbb37a0f3468ff3c9';
-    const spotify_client_secret = '4e4a37e225654065bff02e3954a8b2fd';
-    const spotify_refresh_token = 'AQCuORMiFq2ETN1CQX9UR5B5IrezZq5hTo1Rz0csk84ciKvJgTn-RKxXKUkZzhGt2as3XoqtGqnod4QxlNw4NSLrWiKM0EAoKKYLIloaxbOinRxIP7WYcyC59hLapOClI8s';
+    const spotify_client_id = process.env.CLIENT_ID;
+    const spotify_client_secret = process.env.CLIENT_SECRET;
+    const spotify_refresh_token = process.env.REFRESH_TOKEN;
 
     const basic = Buffer.from(`${spotify_client_id}:${spotify_client_secret}`).toString('base64');
     const NOW_PLAYING_ENDPOINT = `https://api.spotify.com/v1/me/player/currently-playing`;
     const TOKEN_ENDPOINT = `https://accounts.spotify.com/api/token`;
+    const NEXT_SONG = 'https://api.spotify.com/v1/me/player/next';
 
     const getAccessToken = async () => {
       const response = await fetch(TOKEN_ENDPOINT, {
@@ -24,7 +25,7 @@
         }),
       });
 
-      const x = await response.json();
+      const x = await response.json()
       return x
     }
 
@@ -34,6 +35,18 @@
       return fetch(NOW_PLAYING_ENDPOINT, {
         headers: {
           Authorization: `Bearer ${access_token}`,
+        },
+      })
+    }
+
+    const nextSong = async () => {
+      const { access_token } = await getAccessToken()
+
+      return fetch(NEXT_SONG, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${access_token}`,
+          'Content-Type': 'application/json',
         },
       })
     }
@@ -49,8 +62,11 @@
       } else if (response.status === 200) {
         const song = await response.json();
         const isPlaying = song.is_playing;
-        if (song.item === null) {
-          $('#sp-title').text(`Current song can't be find`)
+        // if (song.item === null) {
+        //   $('#sp-title').text(`Current song can't be find`)
+        //   $('#sp-artist, #sp-albumName, #sp-albumImg, #sp-link').empty()
+        if (!isPlaying) {
+          $('#sp-title').text(`Music is not playing`)
           $('#sp-artist, #sp-albumName, #sp-albumImg, #sp-link').empty()
         } else {
           const title = song.item.name;
@@ -59,7 +75,6 @@
           const albumImageUrl = song.item.album.images[0].url;
           const songUrl = song.item.external_urls.spotify;
           const currentSong = [
-            { isPlaying: isPlaying },
             { title: title },
             { artist: artist },
             // { album: album },
@@ -71,11 +86,9 @@
           // $('#sp-albumName').text(album)
           $('#sp-albumImg').html(`<img src="${albumImageUrl}">`)
         }
-
-        const qq = song.item;
-        return qq
+        const x = song.item;
+        return x
       }
-      // setTimeout(spotifyData, 60000)
     }
     $('#btn').click(function() {
       console.log(`Loading Spotify Data...`);
@@ -97,10 +110,10 @@
         reconnectDecay: 1.4,
         reconnectInterval: 1000
       },
-      channels: [ 'a_s_m_n' ],
+      channels: [ process.env.BOT_NAME ],
       identity: {
-        username: 'a_s_m_n',
-        password: 'oauth:5diz1wlegy31xl3aykabd40ztqvxm0' /* separated you and bot */
+        username: process.env.BOT_NAME,
+        password: process.env.BOT_PASSWORD,
       }
     }
 
@@ -179,8 +192,19 @@
           client.action(channel, response(tags.username));
         else if (typeof response === 'string')
           client.action(channel, response);
-      };
+      } else
+        onMessageHandler(channel, tags, message, self);
 
+      // commands for mods
+      if (tags.mod == true || tags.username === process.env.BOT_NAME) {
+        if (message.toLowerCase() === '!next') {
+          nextSong()
+          client.action(channel, `Song has been skipped`)
+          return;
+        }
+      }
+
+      // commands for all
       if (message.toLowerCase() === '!succ' || message.toLowerCase() === '!mgs' || message.toLowerCase() === '!mk') {
         var soundCommand = message.substring(1);
         var audio = new Audio('/sounds/' + soundCommand + '.mp3');
@@ -207,23 +231,18 @@
         song(client, message, tags, channel, self);
         return;
       }
-
-      onMessageHandler(channel, tags, message, self);
     })
 
     /* FUNCTIONS */
     function onConnectedHandler(address, port) {
       console.log(`Bot Connected: ${address}:${port}`)
-      // client.action("a_s_m_n", "I'm alive! VoHiYo")
+      // client.action(process.env.BOT_NAME, "I'm alive! VoHiYo")
     }
     function onDisconnectedHandler(reason) {
       console.log(`Bot Disconnected: ${reason}`)
-      client.action("a_s_m_n", "NotLikeThis")
+      // client.action(process.env.BOT_NAME, "NotLikeThis")
     }
     function onMessageHandler (channel, tags, message, self) {
-      // checkTwitchChat(tags, message, channel)
-      // console.log(`${tags.username}: ${message}`);
-      // console.log(tags);
       const moderator = 'https://static-cdn.jtvnw.net/badges/v1/3267646d-33f0-4b17-b3df-f923a41db1d0/1'
       const broadcaster = 'https://static-cdn.jtvnw.net/badges/v1/5527c58c-fb7d-422d-b71b-f309dcb85cc1/1'
       $('.chat').append(
@@ -306,7 +325,7 @@
       const getSong = async () => {
         const cs = await spotifyData();
         if (typeof cs !== 'undefined')
-          client.action(channel, `@${tags.username}, ${cs.artists.map((_artist) => _artist.name).join(', ')} - ${cs.name} 👉 ${cs.external_urls.spotify} 👈`)
+          client.action(channel, `${cs.artists.map((_artist) => _artist.name).join(', ')} - ${cs.name} 👉 ${cs.external_urls.spotify} 👈`)
       }
       getSong()
     }
