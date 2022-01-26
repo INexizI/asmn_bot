@@ -3,15 +3,39 @@
     const queryString = require('query-string')
     const Buffer = require('buffer/').Buffer
 
-    const spotify_client_id = process.env.CLIENT_ID;
-    const spotify_client_secret = process.env.CLIENT_SECRET;
-    const spotify_refresh_token = process.env.REFRESH_TOKEN;
+    const twitch_client_id = process.env.TCLIENT_ID;
+    const twitch_client_secret = process.env.TCLIENT_SECRET;
+    const spotify_client_id = process.env.SCLIENT_ID;
+    const spotify_client_secret = process.env.SCLIENT_SECRET;
+    const spotify_refresh_token = process.env.SREFRESH_TOKEN;
 
     const basic = Buffer.from(`${spotify_client_id}:${spotify_client_secret}`).toString('base64');
-    const NOW_PLAYING_ENDPOINT = `https://api.spotify.com/v1/me/player/currently-playing`;
+    const TWITCH_TOKEN = 'https://id.twitch.tv/oauth2/token';
     const TOKEN_ENDPOINT = `https://accounts.spotify.com/api/token`;
     const NEXT_SONG = 'https://api.spotify.com/v1/me/player/next';
+    const NOW_PLAYING = `https://api.spotify.com/v1/me/player/currently-playing`;
     let skip_count = 0;
+
+    const getAT = async () => {
+      let url = 'https://id.twitch.tv/oauth2/token?' + $.param({
+        client_id: twitch_client_id,
+        client_secret: twitch_client_secret,
+        grant_type: 'client_credentials',
+        scope: 'user:read:email'
+      })
+      const response = await fetch(url, {
+        method: 'POST',
+      });
+
+      const x = await response.json()
+      return x
+    }
+    const showAT = async () => {
+      const { access_token } = await getAT()
+      /*
+          work with access_token
+      */
+    }
 
     /* SPOTIFY */
     const getAccessToken = async () => {
@@ -32,7 +56,15 @@
     }
     const getNowPlaying = async () => {
       const { access_token } = await getAccessToken()
-      return fetch(NOW_PLAYING_ENDPOINT, {
+      return fetch(NOW_PLAYING, {
+        headers: {
+          Authorization: `Bearer ${access_token}`,
+        },
+      })
+    }
+    const getCurrentPlaylist = async () => {
+      const { access_token } = await getAccessToken()
+      return fetch(PLAYLIST_ENDPOINT, {
         headers: {
           Authorization: `Bearer ${access_token}`,
         },
@@ -44,16 +76,16 @@
         method: 'POST',
         headers: {
           Authorization: `Bearer ${access_token}`,
-          'Content-Type': 'application/json',
         },
       })
     }
-    const spotifyData = async (_, res) => {
+    const spotifyCurrentTrack = async (_, res) => {
       const response = await getNowPlaying();
       // console.log(`response status: ${response.status}`)
       if (response.status === 204 || response.status > 400) {
-        console.log(`Spotify offline`)
-        $('#sp-title').text(`Spotify offline`)
+        console.log(`Spotify offline`);
+        $('#sp-title').text(`Spotify offline`);
+        $('#sp-artist, #sp-albumName, #sp-albumImg, #sp-link').empty();
       } else if (response.status === 200) {
         const song = await response.json();
         const isPlaying = song.is_playing;
@@ -76,20 +108,33 @@
             { albumImageUrl: albumImageUrl },
             { songUrl: songUrl }
           ]
-          $('#sp-title').text(title)
-          $('#sp-artist').text(artist)
-          // $('#sp-albumName').text(album)
-          $('#sp-albumImg').html(`<img src="${albumImageUrl}">`)
+          $('#sp-title').text(title);
+          $('#sp-artist').text(artist);
+          // $('#sp-albumName').text(album);
+          $('#sp-albumImg').html(`<img src="${albumImageUrl}">`);
         }
         const x = song.item;
         return x
       }
     }
+    // const spotifyPlaylist = async (_, res) => {
+    //   const response = await getCurrentPlaylist();
+    //   console.log(`response status: ${response.status}`);
+    //   if (response.status === 204 || response.status > 400) {
+    //     console.log(`Spotify offline`);
+    //     $('#sp-title').text(`Spotify offline`);
+    //     $('#sp-artist, #sp-albumName, #sp-albumImg, #sp-link').empty();
+    //   } else if (response.status === 200) {
+    //     const song = await response.json();
+    //     const x = song.items;
+    //     return x
+    //   }
+    // }
     $('#btn').click(function() {
       console.log(`Loading Spotify Data...`);
-      spotifyData();
+      spotifyCurrentTrack();
     });
-    console.log('Spotify API');
+    console.log('Spotify API!');
 
     const regexpCommand = new RegExp(/^!([a-zA-Z0-9]+)(?:\W+)?(.*)?/);
     const prefix = '#';
@@ -198,6 +243,10 @@
           client.action(channel, `Song has been skipped`);
           return;
         }
+        // if (msg === '!playlist') {
+        //   playlist(client, message, tags, channel, self);
+        //   return;
+        // }
       }
 
       // commands for all
@@ -334,12 +383,20 @@
     }
     function song(client, message, tags, channel, self) {
       const getSong = async () => {
-        const cs = await spotifyData();
+        const cs = await spotifyCurrentTrack();
         if (typeof cs !== 'undefined')
           client.action(channel, `${cs.artists.map((_artist) => _artist.name).join(', ')} - ${cs.name} 👉 ${cs.external_urls.spotify} 👈`)
       }
       getSong()
     }
+    // function playlist(client, message, tags, channel, self) {
+    //   const getPlaylist = async () => {
+    //     const pl = await spotifyPlaylist();
+    //     if (typeof pl !== 'undefined')
+    //       console.log(pl)
+    //   }
+    //   getPlaylist()
+    // }
 
     /*
         if you want whispers messages from bot to user:
