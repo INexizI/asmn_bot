@@ -11,7 +11,9 @@
     const NOW_PLAYING_ENDPOINT = `https://api.spotify.com/v1/me/player/currently-playing`;
     const TOKEN_ENDPOINT = `https://accounts.spotify.com/api/token`;
     const NEXT_SONG = 'https://api.spotify.com/v1/me/player/next';
+    let skip_count = 0;
 
+    /* SPOTIFY */
     const getAccessToken = async () => {
       const response = await fetch(TOKEN_ENDPOINT, {
         method: 'POST',
@@ -28,20 +30,16 @@
       const x = await response.json()
       return x
     }
-
     const getNowPlaying = async () => {
       const { access_token } = await getAccessToken()
-
       return fetch(NOW_PLAYING_ENDPOINT, {
         headers: {
           Authorization: `Bearer ${access_token}`,
         },
       })
     }
-
     const nextSong = async () => {
       const { access_token } = await getAccessToken()
-
       return fetch(NEXT_SONG, {
         method: 'POST',
         headers: {
@@ -50,13 +48,10 @@
         },
       })
     }
-
     const spotifyData = async (_, res) => {
       const response = await getNowPlaying();
-      console.log(`response status: ${response.status}`)
-
+      // console.log(`response status: ${response.status}`)
       if (response.status === 204 || response.status > 400) {
-        // return res.status(200).json({ isPlaying: false });
         console.log(`Spotify offline`)
         $('#sp-title').text(`Spotify offline`)
       } else if (response.status === 200) {
@@ -99,7 +94,7 @@
     const regexpCommand = new RegExp(/^!([a-zA-Z0-9]+)(?:\W+)?(.*)?/);
     const prefix = '#';
 
-    /* CONNECTION OPTIONS */
+    /* BOT CONNECTION */
     const config = {
       options: { debug: true },
       connection: {
@@ -129,19 +124,19 @@
       github: { response: 'https://github.com/INexizI' }
     }
 
-    const allSound = [
-      // { name: 'ding', value: '/sounds/ding_ding_ding.mp3' },
-      // { name: 'faith', value: '/sounds/faith.mp3' },
-      // { name: 'dio', value: '/sounds/kono_dio_da.mp3' },
-      // { name: 'way', value: '/sounds/klk.mp3' },
-      { name: 'mk', value: '/sounds/mk.mp3' },
-      { name: 'mgs', value: '/sounds/mgs.mp3' },
-      { name: 'succ', value: '/sounds/succ.mp3' },
-      // { name: 'booya', value: '/sounds/booya.wav' },
-      // { name: 'goblin', value: '/sounds/goblin.wav' },
-      // { name: 'green', value: '/sounds/green.wav' },
-      // { name: 'meteorit', value: '/sounds/meteorit.wav' },
-    ]
+    const allSound = {
+      ding:     '/sounds/ding_ding_ding.mp3',
+      faith:    '/sounds/faith.mp3',
+      dio:      '/sounds/kono_dio_da.mp3',
+      way:      '/sounds/klk.mp3',
+      mk:       '/sounds/mk.mp3',
+      mgs:      '/sounds/mgs.mp3',
+      succ:     '/sounds/succ.mp3',
+      booya:    '/sounds/booya.wav',
+      goblin:   '/sounds/goblin.wav',
+      green:    '/sounds/green.wav',
+      meteorit: '/sounds/meteorit.wav',
+    }
 
     const client = new tmi.Client(config)
     client.connect().catch(console.error);
@@ -184,6 +179,7 @@
     client.on('chat', (channel, tags, message, self) => {
       if (self) return;
       // if (tags.username === 'a_s_m_n') return;
+      let msg = message.toLowerCase();
 
       if (message.charAt(0) == '!') {
         const [raw, command, argument] = message.match(regexpCommand);
@@ -197,27 +193,34 @@
 
       // commands for mods
       if (tags.mod == true || tags.username === process.env.BOT_NAME) {
-        if (message.toLowerCase() === '!next') {
-          nextSong()
-          client.action(channel, `Song has been skipped`)
+        if (msg === '!next') {
+          nextSong();
+          client.action(channel, `Song has been skipped`);
           return;
         }
       }
 
       // commands for all
-      if (message.toLowerCase() === '!succ' || message.toLowerCase() === '!mgs' || message.toLowerCase() === '!mk') {
-        var soundCommand = message.substring(1);
-        var audio = new Audio('/sounds/' + soundCommand + '.mp3');
+      if (msg === '!sound') {
+        var x = 'Sound commands:';
+        $.each(allSound, function(i, n) {
+          x += ` !${i}`;
+        })
+        client.action(channel, x)
+      }
+      if (msg === '!succ' || msg === '!mgs' || msg === '!mk' || msg === '!booya') {
+        let soundCommand = message.substring(1);
+        let audio = new Audio(`/sounds/${soundCommand}.mp3`);
         // audio.autoplay = true;
         // audio.muted = true;
         audio.volume = 0.1;
         audio.play();
       }
-      if (message.toLowerCase() === '!ping') {
+      if (msg === '!ping') {
         ping(client, message, tags, channel, self);
         return;
       }
-      if (message.toLowerCase().slice(0, 4) === '!ban') {
+      if (msg.slice(0, 4) === '!ban') {
         const ban = {
           1: 'Is permanently banned from this channel',
           2: 'BAN SMOrc',
@@ -225,11 +228,20 @@
           4: 'AngelThump'
         };
         var n = Math.floor(Math.random() * 4) + 1;
-        client.action(channel, `${message.toLowerCase().slice(5)} ${ban[n]}`);
+        client.action(channel, `${msg.slice(5)} ${ban[n]}`);
       }
-      if (message.toLowerCase() === '!song') {
+      if (msg === '!song') {
         song(client, message, tags, channel, self);
         return;
+      }
+      if (msg === 'skip') { // need to validate uniq user message by tags['user-id']
+        skip_count++;
+        if (skip_count == 3) {
+          skip_count = 0;
+          nextSong();
+          client.action(channel, `Song has been skipped`);
+          return;
+        }
       }
     })
 
@@ -241,17 +253,6 @@
     function onDisconnectedHandler(reason) {
       console.log(`Bot Disconnected: ${reason}`)
       // client.action(process.env.BOT_NAME, "NotLikeThis")
-    }
-    function onMessageHandler (channel, tags, message, self) {
-      const moderator = 'https://static-cdn.jtvnw.net/badges/v1/3267646d-33f0-4b17-b3df-f923a41db1d0/1'
-      const broadcaster = 'https://static-cdn.jtvnw.net/badges/v1/5527c58c-fb7d-422d-b71b-f309dcb85cc1/1'
-      $('.chat').append(
-        `<p>
-          ${(tags.mod == true ? '<img src=' + moderator + ' id="ch-badge">' : '')}
-          <span style="color: ${tags.color}" id="ch-user">${tags['display-name']}: </span>
-          <span id="ch-msg">${message}</span>
-          </p>`
-        );
     }
     function onHostedHandler (channel, username, viewers, autohost) {
       client.say(channel,
@@ -283,7 +284,7 @@
         `We are now hosting ${target} with ${viewers} viewers!`
       )
     }
-    function reconnectHandler () {
+    function reconnectHandler() {
       console.log('Reconnecting...')
     }
     function resubHandler(channel, username, months, message, tags, methods) {
@@ -304,14 +305,24 @@
       //   `${username} has gifted ${senderCount} subs!`
       // )
     }
+
+    function onMessageHandler (channel, tags, message, self) {
+      const moderator = 'https://static-cdn.jtvnw.net/badges/v1/3267646d-33f0-4b17-b3df-f923a41db1d0/1'
+      const broadcaster = 'https://static-cdn.jtvnw.net/badges/v1/5527c58c-fb7d-422d-b71b-f309dcb85cc1/1'
+      $('.chat').append(
+        `<p>
+          ${(tags.mod == true ? '<img src=' + moderator + ' id="ch-badge">' : '')}
+          <span style="color: ${tags.color}" id="ch-user">${tags['display-name']}: </span>
+          <span id="ch-msg">${message}</span>
+        </p>`
+      )
+      clearChat()
+    }
     function clearChat() {
-      let msg_limit = $('.chat').children(':first')
-      if ($('.chat p').length > 5) {
-        msg_limit.fadeOut('fast')
-        setTimeout(function() {
-          msg_limit.remove()
-        }, 2000)
-      }
+      let msg_limit = $('.chat p').length
+      let msg_first = $('.chat').children(':first')
+      if (msg_limit > 5)
+        msg_first.remove()
     }
 
     /* COMMANDS */
