@@ -3,6 +3,8 @@
     const queryString = require('query-string')
     const Buffer = require('buffer/').Buffer
 
+    const twitch_user_id = process.env.BOT_ID;
+    const twitch_user_name = process.env.BOT_NAME;
     const twitch_client_id = process.env.TCLIENT_ID;
     const twitch_client_secret = process.env.TCLIENT_SECRET;
     const spotify_client_id = process.env.SCLIENT_ID;
@@ -16,7 +18,7 @@
     const NOW_PLAYING = `https://api.spotify.com/v1/me/player/currently-playing`;
     let skip_count = 0;
 
-    const getAT = async () => {
+    const getTwitchToken = async () => {
       let url = 'https://id.twitch.tv/oauth2/token?' + $.param({
         client_id: twitch_client_id,
         client_secret: twitch_client_secret,
@@ -30,12 +32,12 @@
       const x = await response.json()
       return x
     }
-    const showAT = async () => {
-      const { access_token } = await getAT()
-      /*
-          work with access_token
-      */
-    }
+    // const useTwitchToken = async () => {
+    //   const { access_token } = await getTwitchToken();
+    //   /*
+    //       work with access_token
+    //   */
+    // }
 
     /* SPOTIFY */
     const getAccessToken = async () => {
@@ -150,9 +152,9 @@
         reconnectDecay: 1.4,
         reconnectInterval: 1000
       },
-      channels: [ process.env.BOT_NAME ],
+      channels: [ twitch_user_name ],
       identity: {
-        username: process.env.BOT_NAME,
+        username: twitch_user_name,
         password: process.env.BOT_PASSWORD,
       }
     }
@@ -237,7 +239,7 @@
         onMessageHandler(channel, tags, message, self);
 
       // commands for mods
-      if (tags.mod == true || tags.username === process.env.BOT_NAME) {
+      if (tags.mod == true || tags.username === twitch_user_name) {
         if (msg === '!next') {
           nextSong();
           client.action(channel, `Song has been skipped`);
@@ -292,16 +294,21 @@
           return;
         }
       }
+
+      if (msg === '!follow') {
+        getUserFollowTime(client, message, tags, channel, self);
+        return;
+      }
     })
 
     /* FUNCTIONS */
     function onConnectedHandler(address, port) {
       console.log(`Bot Connected: ${address}:${port}`)
-      // client.action(process.env.BOT_NAME, "I'm alive! VoHiYo")
+      // client.action(twitch_user_name, "I'm alive! VoHiYo")
     }
     function onDisconnectedHandler(reason) {
       console.log(`Bot Disconnected: ${reason}`)
-      // client.action(process.env.BOT_NAME, "NotLikeThis")
+      // client.action(twitch_user_name, "NotLikeThis")
     }
     function onHostedHandler (channel, username, viewers, autohost) {
       client.say(channel,
@@ -368,10 +375,10 @@
       clearChat()
     }
     function clearChat() {
-      let msg_limit = $('.chat p').length
-      let msg_first = $('.chat').children(':first')
+      let msg_limit = $('.chat p').length;
+      let msg_first = $('.chat').children(':first');
       if (msg_limit > 5)
-        msg_first.remove()
+        msg_first.remove();
     }
 
     /* COMMANDS */
@@ -397,6 +404,36 @@
     //   }
     //   getPlaylist()
     // }
+    // async function getUserInfo(client, message, tags, channel, self) {
+    //   const userInfo = async () => {
+    //     let url = `https://api.twitch.tv/helix/users?login=${tags.username}`
+    //     const { access_token } = await getTwitchToken();
+    //     return fetch(url, {
+    //       headers: {
+    //         Authorization: `Bearer ${access_token}`,
+    //         'Client-Id': twitch_client_id,
+    //       },
+    //     }).then((res) => res.json())
+    //   }
+    //   const response = await userInfo();
+    //   const x = response.data[0];
+    //   return x;
+    // }
+    async function getUserFollowTime(client, message, tags, channel, self) {
+      const followTime = async () => {
+        let url = `https://api.twitch.tv/helix/users/follows?to_id=${twitch_user_id}&from_login=${tags.username}`
+        const { access_token } = await getTwitchToken();
+        return fetch(url, {
+          headers: {
+            Authorization: `Bearer ${access_token}`,
+            'Client-Id': twitch_client_id,
+          },
+        }).then((res) => res.json())
+      }
+      const response = await followTime();
+      const x = response.data[0];
+      client.action(channel, `@${tags.username}, you have been following the channel - ${x.followed_at}`)
+    }
 
     /*
         if you want whispers messages from bot to user:
