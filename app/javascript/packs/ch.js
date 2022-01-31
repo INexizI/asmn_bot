@@ -172,17 +172,33 @@
     }
 
     const allSound = {
-      ding:     '/sounds/ding_ding_ding.mp3',
-      faith:    '/sounds/faith.mp3',
-      dio:      '/sounds/kono_dio_da.mp3',
-      way:      '/sounds/klk.mp3',
-      mk:       '/sounds/mk.mp3',
-      mgs:      '/sounds/mgs.mp3',
-      succ:     '/sounds/succ.mp3',
-      booya:    '/sounds/booya.wav',
-      goblin:   '/sounds/goblin.wav',
-      green:    '/sounds/green.wav',
-      meteorit: '/sounds/meteorit.wav',
+      booya:        '/sounds/booya.wav',
+      bruh:         '/sounds/.wav',
+      ding:         '/sounds/ding.wav',
+      dio:          '/sounds/dio.wav',
+      faild:        '/sounds/faild.wav',
+      faith:        '/sounds/faith.wav',
+      goblin:       '/sounds/goblin.wav',
+      green:        '/sounds/green.wav',
+      klk:          '/sounds/klk.wav',
+      meteorit:     '/sounds/meteorit.wav',
+      mgs:          '/sounds/mgs.wav',
+      mk:           '/sounds/mk.wav',
+      mucaraevo:    '/sounds/mucaraevo.wav',
+      ntf:          '/sounds/ntf.wav',
+      omg:          '/sounds/omg.wav',
+      ouh:          '/sounds/ouh.wav',
+      quieres:      '/sounds/quieres.wav',
+      roger:        '/sounds/roger.wav',
+      soi:          '/sounds/soi.wav',
+      succ:         '/sounds/succ.wav',
+      teme:         '/sounds/teme.wav',
+      tuturu:       '/sounds/tuturu.wav',
+      vkluchi:      '/sounds/vkluchi.wav',
+      weeaboo:      '/sounds/weeaboo.wav',
+      wrong:        '/sounds/wrong.wav',
+      yare:         '/sounds/yare.wav',
+      yooh:         '/sounds/yooh.wav',
     }
 
     const client = new tmi.Client(config)
@@ -228,7 +244,7 @@
       // if (tags.username === 'a_s_m_n') return;
       let msg = message.toLowerCase();
 
-      if (message.charAt(0) == '!') {
+      if (msg.charAt(0) === '!') {
         const [raw, command, argument] = message.match(regexpCommand);
         const { response } = commands[command] || {};
         if (typeof response === 'function')
@@ -255,13 +271,13 @@
       if (msg === '!sound') {
         var x = 'Sound commands:';
         $.each(allSound, function(i, n) {
-          x += ` !${i}`;
+          x += ` #${i}`;
         })
         client.action(channel, x)
       }
-      if (msg === '!succ' || msg === '!mgs' || msg === '!mk' || msg === '!booya') {
+      if (msg.charAt(0) === '#') {
         let soundCommand = message.substring(1);
-        let audio = new Audio(`/sounds/${soundCommand}.mp3`);
+        let audio = new Audio(`/sounds/${soundCommand}.wav`);
         // audio.autoplay = true;
         // audio.muted = true;
         audio.volume = 0.1;
@@ -362,16 +378,18 @@
     }
 
     function onMessageHandler (channel, tags, message, self) {
-      const moderator = 'https://static-cdn.jtvnw.net/badges/v1/3267646d-33f0-4b17-b3df-f923a41db1d0/1'
-      const broadcaster = 'https://static-cdn.jtvnw.net/badges/v1/5527c58c-fb7d-422d-b71b-f309dcb85cc1/1'
-      $('.chat').append(
-        `<p>
+      if (message.charAt(0) !== prefix) {
+        const moderator = 'https://static-cdn.jtvnw.net/badges/v1/3267646d-33f0-4b17-b3df-f923a41db1d0/1'
+        const broadcaster = 'https://static-cdn.jtvnw.net/badges/v1/5527c58c-fb7d-422d-b71b-f309dcb85cc1/1'
+        $('.chat').append(
+          `<p>
           ${(tags.mod == true ? '<img src=' + moderator + ' id="ch-badge">' : '')}
           <span style="color: ${tags.color}" id="ch-user">${tags['display-name']}: </span>
           <span id="ch-msg">${message}</span>
-        </p>`
-      )
-      clearChat()
+          </p>`
+        )
+        clearChat()
+      }
     }
     function clearChat() {
       let msg_limit = $('.chat p').length;
