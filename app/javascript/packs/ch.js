@@ -136,7 +136,7 @@
       console.log(`Loading Spotify Data...`);
       spotifyCurrentTrack();
     });
-    console.log('Spotify API!');
+    console.log('Spotify API');
 
     const regexpCommand = new RegExp(/^!([a-zA-Z0-9]+)(?:\W+)?(.*)?/);
     const prefix = '#';
@@ -294,7 +294,6 @@
           return;
         }
       }
-
       if (msg === '!follow') {
         getUserFollowTime(client, message, tags, channel, self);
         return;
@@ -431,8 +430,18 @@
         }).then((res) => res.json())
       }
       const response = await followTime();
-      const x = response.data[0];
-      client.action(channel, `@${tags.username}, you have been following the channel - ${x.followed_at}`)
+      const x = response.data[0].followed_at;
+      const date = new Date(x.split('T').shift());
+      const options = {
+        // weekday: 'short',          // long, short, narrow
+        day: 'numeric',               // numeric, 2-digit
+        year: 'numeric',              // numeric, 2-digit
+        month: 'long',                // numeric, 2-digit, long, short, narrow
+        // hour: 'numeric',           // numeric, 2-digit
+        // minute: 'numeric',         // numeric, 2-digit
+        // second: 'numeric',         // numeric, 2-digit
+      }
+      client.action(channel, `@${tags.username}, you've been following the channel since [${date.toLocaleDateString('en-UK', options)}]`)
     }
 
     /*
