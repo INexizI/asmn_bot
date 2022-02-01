@@ -3,6 +3,7 @@
     const queryString = require('query-string')
     const Buffer = require('buffer/').Buffer
 
+    /* CREDENTIALS */
     const twitch_user_id = process.env.BOT_ID;
     const twitch_user_name = process.env.BOT_NAME;
     const twitch_client_id = process.env.TCLIENT_ID;
@@ -12,19 +13,24 @@
     const spotify_refresh_token = process.env.SREFRESH_TOKEN;
 
     const basic = Buffer.from(`${spotify_client_id}:${spotify_client_secret}`).toString('base64');
+    let skip_count = 0;
+
+    /* ENDPOINTS */
     const TWITCH_TOKEN = 'https://id.twitch.tv/oauth2/token';
+    const TWITCH_FOLLOW = 'https://api.twitch.tv/helix/users/follows'
     const TOKEN_ENDPOINT = `https://accounts.spotify.com/api/token`;
     const NEXT_SONG = 'https://api.spotify.com/v1/me/player/next';
     const NOW_PLAYING = `https://api.spotify.com/v1/me/player/currently-playing`;
-    let skip_count = 0;
 
+    /* TWITCH API */
     const getTwitchToken = async () => {
-      let url = 'https://id.twitch.tv/oauth2/token?' + $.param({
+      let param = $.param({
         client_id: twitch_client_id,
         client_secret: twitch_client_secret,
         grant_type: 'client_credentials',
         scope: 'user:read:email'
       })
+      let url = `${TWITCH_TOKEN}?${param}`
       const response = await fetch(url, {
         method: 'POST',
       });
@@ -39,7 +45,7 @@
     //   */
     // }
 
-    /* SPOTIFY */
+    /* SPOTIFY API */
     const getAccessToken = async () => {
       const response = await fetch(TOKEN_ENDPOINT, {
         method: 'POST',
@@ -438,7 +444,11 @@
     // }
     async function getUserFollowTime(client, message, tags, channel, self) {
       const followTime = async () => {
-        let url = `https://api.twitch.tv/helix/users/follows?to_id=${twitch_user_id}&from_login=${tags.username}`
+        let param = $.param({
+          to_id: twitch_user_id,
+          from_login: tags.username
+        });
+        let url = `${TWITCH_FOLLOW}?${param}`
         const { access_token } = await getTwitchToken();
         return fetch(url, {
           headers: {
