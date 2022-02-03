@@ -4,11 +4,11 @@
     const Buffer = require('buffer/').Buffer
 
     /* CREDENTIALS */
-    const twitch_user_id = process.env.BOT_ID;
-    const twitch_user_name = process.env.BOT_NAME;
-    const twitch_client_id = process.env.TCLIENT_ID;
-    const twitch_client_secret = process.env.TCLIENT_SECRET;
-    const spotify_client_id = process.env.SCLIENT_ID;
+    const twitch_user_id =        process.env.BOT_ID;
+    const twitch_user_name =      process.env.BOT_NAME;
+    const twitch_client_id =      process.env.TCLIENT_ID;
+    const twitch_client_secret =  process.env.TCLIENT_SECRET;
+    const spotify_client_id =     process.env.SCLIENT_ID;
     const spotify_client_secret = process.env.SCLIENT_SECRET;
     const spotify_refresh_token = process.env.SREFRESH_TOKEN;
 
@@ -16,11 +16,17 @@
     let skip_count = 0;
 
     /* ENDPOINTS */
-    const TWITCH_TOKEN = 'https://id.twitch.tv/oauth2/token';
-    const TWITCH_FOLLOW = 'https://api.twitch.tv/helix/users/follows'
-    const TOKEN_ENDPOINT = `https://accounts.spotify.com/api/token`;
-    const NEXT_SONG = 'https://api.spotify.com/v1/me/player/next';
-    const NOW_PLAYING = `https://api.spotify.com/v1/me/player/currently-playing`;
+    const TWITCH_TOKEN =         'https://id.twitch.tv/oauth2/token';
+    const TWITCH_INFO =          'https://api.twitch.tv/helix/channels';
+    const TWITCH_BADGES_GLOBAL = 'https://api.twitch.tv/helix/chat/badges/global';
+    const TWITCH_BADGES =        'https://api.twitch.tv/helix/chat/badges';
+    const TWITCH_FOLLOW =        'https://api.twitch.tv/helix/users/follows';
+    const TWITCH_POLL =          'https://api.twitch.tv/helix/polls';
+    const TWITCH_PREDICTIONS =   'https://api.twitch.tv/helix/predictions';
+
+    const TOKEN_ENDPOINT =       'https://accounts.spotify.com/api/token';
+    const NEXT_SONG =            'https://api.spotify.com/v1/me/player/next';
+    const NOW_PLAYING =          'https://api.spotify.com/v1/me/player/currently-playing';
 
     /* TWITCH API */
     const getTwitchToken = async () => {
@@ -28,7 +34,12 @@
         client_id: twitch_client_id,
         client_secret: twitch_client_secret,
         grant_type: 'client_credentials',
-        scope: 'user:read:email'
+        scope: [
+          'user:read:email',
+          'channel:manage:polls',
+          'channel:manage:broadcast',
+          'channel:manage:predictions'
+        ]
       })
       let url = `${TWITCH_TOKEN}?${param}`
       const response = await fetch(url, {
@@ -320,6 +331,10 @@
         getUserFollowTime(client, message, tags, channel, self);
         return;
       }
+      if (msg === '!info') {
+        getStreamInfo(client, message, tags, channel, self);
+        return;
+      }
     })
 
     /* FUNCTIONS */
@@ -448,15 +463,15 @@
           to_id: twitch_user_id,
           from_login: tags.username
         });
-        let url = `${TWITCH_FOLLOW}?${param}`
+        let url = `${TWITCH_FOLLOW}?${param}`;
         const { access_token } = await getTwitchToken();
         return fetch(url, {
           headers: {
             Authorization: `Bearer ${access_token}`,
             'Client-Id': twitch_client_id,
           },
-        }).then((res) => res.json())
-      }
+        }).then((res) => res.json());
+      };
       const response = await followTime();
       const x = response.data[0].followed_at;
       const date = new Date(x.split('T').shift());
@@ -470,6 +485,110 @@
         // second: 'numeric',         // numeric, 2-digit
       }
       client.action(channel, `@${tags.username}, you've been following the channel since [${date.toLocaleDateString('en-UK', options)}]`)
+    }
+    async function getChannelBadgesGlobal(client, message, tags, channel, self) {
+      const channelBadgesGlobal = async () => {
+        let url = `${TWITCH_BADGES_GLOBAL}`;
+        const { access_token } = await getTwitchToken();
+        return fetch(url, {
+          headers: {
+            Authorization: `Bearer ${access_token}`,
+            'Client-Id': twitch_client_id,
+          },
+        }).then((res) => res.json());
+      };
+      const response = await channelBadgesGlobal();
+      const x = response.data
+      console.log(x);
+    }
+    async function getChannelBadges(client, message, tags, channel, self) {
+      const channelBadges = async () => {
+        let param = $.param({
+          broadcaster_id: twitch_user_id,
+        });
+        let url = `${TWITCH_BADGES}?${param}`;
+        const { access_token } = await getTwitchToken();
+        return fetch(url, {
+          headers: {
+            Authorization: `Bearer ${access_token}`,
+            'Client-Id': twitch_client_id,
+          },
+        }).then((res) => res.json());
+      };
+      const response = await channelBadges();
+      const x = response.data
+      console.log(x);
+    }
+    async function createPoll(client, message, tags, channel, self) {
+      const poll = async () => {
+        let data = {
+          broadcaster_id: twitch_user_id,
+          title: `1st var or 2nd var!`,
+          choices: [
+            { title: `1st var` },
+            { title: `2nd var` }
+          ],
+          duration: 1800,
+        };
+        const { access_token } = await getTwitchToken();
+        const response = await fetch(TWITCH_POLL, {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${access_token}`,
+            'Client-Id': twitch_client_id,
+          },
+          body: JSON.stringify(data)
+        }).then((res) => res.json());
+      };
+
+      const response = await poll();
+      const x = response.data;
+      console.log(x);
+    }
+    async function createPrediction(client, message, tags, channel, self) {
+      const predictions = async () => {
+        let data = {
+          broadcaster_id: twitch_user_id,
+          title: `W or L?`,
+          outcomes: [
+            { title: `yep` },
+            { title: `nope` }
+          ],
+          prediction_window: 120,
+        };
+        const { access_token } = await getTwitchToken();
+        const response = await fetch(TWITCH_PREDICTIONS, {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${access_token}`,
+            'Client-Id': twitch_client_id,
+          },
+          body: JSON.stringify(data)
+        }).then((res) => res.json());
+      };
+
+      const response = await predictions();
+      const x = response.data;
+      console.log(x);
+    }
+    async function getStreamInfo(client, message, tags, channel, self) {
+      const getInfo = async () => {
+        let param = $.param({
+          broadcaster_id: twitch_user_id,
+        });
+        let url = `${TWITCH_INFO}?${param}`;
+        const { access_token } = await getTwitchToken();
+        return fetch(url, {
+          headers: {
+            Authorization: `Bearer ${access_token}`,
+            'Client-Id': twitch_client_id,
+          },
+        }).then((res) => res.json());
+      }
+
+      const response = await getInfo();
+      const x = response.data[0];
+      console.log(x);
     }
 
     /*
