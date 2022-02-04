@@ -20,6 +20,8 @@
     const TWITCH_INFO =          'https://api.twitch.tv/helix/channels';
     const TWITCH_BADGES_GLOBAL = 'https://api.twitch.tv/helix/chat/badges/global';
     const TWITCH_BADGES =        'https://api.twitch.tv/helix/chat/badges';
+    const TWITCH_EMOTES_GLOBAL = 'https://api.twitch.tv/helix/chat/emotes/global';
+    const TWITCH_EMOTES =        'https://api.twitch.tv/helix/chat/emotes';
     const TWITCH_FOLLOW =        'https://api.twitch.tv/helix/users/follows';
     const TWITCH_POLL =          'https://api.twitch.tv/helix/polls';
     const TWITCH_PREDICTIONS =   'https://api.twitch.tv/helix/predictions';
@@ -335,6 +337,10 @@
         getStreamInfo(client, message, tags, channel, self);
         return;
       }
+      // if (msg.slice(0, 6) === '!title') {
+      //   changeTitle(client, message, tags, channel, self);
+      //   return;
+      // }
     })
 
     /* FUNCTIONS */
@@ -519,58 +525,91 @@
       const x = response.data
       console.log(x);
     }
-    async function createPoll(client, message, tags, channel, self) {
-      const poll = async () => {
-        let data = {
-          broadcaster_id: twitch_user_id,
-          title: `1st var or 2nd var!`,
-          choices: [
-            { title: `1st var` },
-            { title: `2nd var` }
-          ],
-          duration: 1800,
-        };
+    async function getEmotesGlobal(client, message, tags, channel, self) {
+      const emotesGlobal = async () => {
+        let url = `${TWITCH_EMOTES_GLOBAL}`;
         const { access_token } = await getTwitchToken();
-        const response = await fetch(TWITCH_POLL, {
-          method: 'POST',
+        return fetch(url, {
           headers: {
             Authorization: `Bearer ${access_token}`,
             'Client-Id': twitch_client_id,
           },
-          body: JSON.stringify(data)
         }).then((res) => res.json());
       };
-
-      const response = await poll();
-      const x = response.data;
+      const response = await emotesGlobal();
+      const x = response.data
       console.log(x);
     }
-    async function createPrediction(client, message, tags, channel, self) {
-      const predictions = async () => {
-        let data = {
+    async function getChannelEmotes(client, message, tags, channel, self) {
+      const channelEmotes = async () => {
+        let param = $.param({
           broadcaster_id: twitch_user_id,
-          title: `W or L?`,
-          outcomes: [
-            { title: `yep` },
-            { title: `nope` }
-          ],
-          prediction_window: 120,
-        };
+        });
+        let url = `${TWITCH_EMOTES}?${param}`;
         const { access_token } = await getTwitchToken();
-        const response = await fetch(TWITCH_PREDICTIONS, {
-          method: 'POST',
+        return fetch(url, {
           headers: {
             Authorization: `Bearer ${access_token}`,
             'Client-Id': twitch_client_id,
           },
-          body: JSON.stringify(data)
         }).then((res) => res.json());
       };
-
-      const response = await predictions();
-      const x = response.data;
+      const response = await channelEmotes();
+      const x = response.data
       console.log(x);
     }
+    // async function createPoll(client, message, tags, channel, self) {
+    //   const poll = async () => {
+    //     let data = {
+    //       broadcaster_id: twitch_user_id,
+    //       title: `1st var or 2nd var!`,
+    //       choices: [
+    //         { title: `1st var` },
+    //         { title: `2nd var` }
+    //       ],
+    //       duration: 1800,
+    //     };
+    //     const { access_token } = await getTwitchToken();
+    //     const response = await fetch(TWITCH_POLL, {
+    //       method: 'POST',
+    //       headers: {
+    //         Authorization: `Bearer ${access_token}`,
+    //         'Client-Id': twitch_client_id,
+    //       },
+    //       body: JSON.stringify(data)
+    //     }).then((res) => res.json());
+    //   };
+    //
+    //   const response = await poll();
+    //   const x = response.data;
+    //   console.log(x);
+    // }
+    // async function createPrediction(client, message, tags, channel, self) {
+    //   const predictions = async () => {
+    //     let data = {
+    //       broadcaster_id: twitch_user_id,
+    //       title: `W or L?`,
+    //       outcomes: [
+    //         { title: `yep` },
+    //         { title: `nope` }
+    //       ],
+    //       prediction_window: 120,
+    //     };
+    //     const { access_token } = await getTwitchToken();
+    //     const response = await fetch(TWITCH_PREDICTIONS, {
+    //       method: 'POST',
+    //       headers: {
+    //         Authorization: `Bearer ${access_token}`,
+    //         'Client-Id': twitch_client_id,
+    //       },
+    //       body: JSON.stringify(data)
+    //     }).then((res) => res.json());
+    //   };
+    //
+    //   const response = await predictions();
+    //   const x = response.data;
+    //   console.log(x);
+    // }
     async function getStreamInfo(client, message, tags, channel, self) {
       const getInfo = async () => {
         let param = $.param({
@@ -590,7 +629,36 @@
       const x = response.data[0];
       console.log(x);
     }
-
+    // async function changeTitle(client, message, tags, channel, self) {
+    //   const newTitle = async () => {
+    //     const title = message.slice(7);
+    //     console.log(title);
+    //     let data = {
+    //       // game_id: '1469308723', // "Software and Game Development"
+    //       title: title,
+    //       // broadcaster_language: 'en'
+    //     };
+    //     let param = $.param({
+    //       broadcaster_id: twitch_user_id,
+    //     });
+    //     let url = `${TWITCH_INFO}?${param}`;
+    //     const { access_token } = await getTwitchToken();
+    //     return fetch(url, {
+    //       method: 'PATCH',
+    //       headers: {
+    //         Authorization: `Bearer ${access_token}`,
+    //         'Client-Id': twitch_client_id,
+    //         'Content-Type': 'application/json',
+    //       },
+    //       body: JSON.stringify(data)
+    //     }).then((res) => res.json());
+    //   }
+    //
+    //   const response = await newTitle();
+    //   const x = response;
+    //   console.log(x);
+    // }
+    
     /*
         if you want whispers messages from bot to user:
             https://dev.twitch.tv/limit-increase
