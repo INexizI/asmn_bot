@@ -22,6 +22,7 @@
     const TWITCH_BADGES =        'https://api.twitch.tv/helix/chat/badges';
     const TWITCH_EMOTES_GLOBAL = 'https://api.twitch.tv/helix/chat/emotes/global';
     const TWITCH_EMOTES =        'https://api.twitch.tv/helix/chat/emotes';
+    const TWITCH_EMOTES_SET =    'https://api.twitch.tv/helix/chat/emotes/set';
     const TWITCH_FOLLOW =        'https://api.twitch.tv/helix/users/follows';
     const TWITCH_POLL =          'https://api.twitch.tv/helix/polls';
     const TWITCH_PREDICTIONS =   'https://api.twitch.tv/helix/predictions';
@@ -557,6 +558,26 @@
       const response = await channelEmotes();
       const x = response.data
       console.log(x);
+      return x[0];
+    }
+    async function getChannelEmotesSet(client, message, tags, channel, self) {
+      const channelSet = async () => {
+        const { emote_set_id } = await getChannelEmotes();
+        let param = $.param({
+          emote_set_id: emote_set_id,
+        });
+        let url = `${TWITCH_EMOTES_SET}?${param}`;
+        const { access_token } = await getTwitchToken();
+        return fetch(url, {
+          headers: {
+            Authorization: `Bearer ${access_token}`,
+            'Client-Id': twitch_client_id,
+          },
+        }).then((res) => res.json());
+      };
+      const response = await channelSet();
+      const x = response.data
+      console.log(x);
     }
     // async function createPoll(client, message, tags, channel, self) {
     //   const poll = async () => {
@@ -658,7 +679,7 @@
     //   const x = response;
     //   console.log(x);
     // }
-    
+
     /*
         if you want whispers messages from bot to user:
             https://dev.twitch.tv/limit-increase
