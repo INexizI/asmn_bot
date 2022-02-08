@@ -342,6 +342,14 @@
       //   changeTitle(client, message, tags, channel, self);
       //   return;
       // }
+      if (msg === '!emotes') {
+        getChannelEmotes(client, message, tags, channel, self);
+        return;
+      }
+      if (msg === '!set') {
+        getChannelEmotesSet(client, message, tags, channel, self);
+        return;
+      }
     })
 
     /* FUNCTIONS */
@@ -407,13 +415,16 @@
 
     function onMessageHandler (channel, tags, message, self) {
       if (message.charAt(0) !== prefix) {
-        const moderator = 'https://static-cdn.jtvnw.net/badges/v1/3267646d-33f0-4b17-b3df-f923a41db1d0/1'
         const broadcaster = 'https://static-cdn.jtvnw.net/badges/v1/5527c58c-fb7d-422d-b71b-f309dcb85cc1/1'
+        const moderator = 'https://static-cdn.jtvnw.net/badges/v1/3267646d-33f0-4b17-b3df-f923a41db1d0/1'
+        // const subscriber = '' // subscriber badges
         $('.chat').append(
           `<p>
-          ${(tags.mod == true ? '<img src=' + moderator + ' id="ch-badge">' : '')}
+          ${tags.subscriber == true ? `<img src=${subscriber} id="ch-badge">` : ''}
+          ${tags.username === twitch_user_name ? `<img src=${broadcaster} id="ch-badge">` : ''}
+          ${tags.mod == true ? `<img src=${moderator} id="ch-badge">` : ''}
           <span style="color: ${tags.color}" id="ch-user">${tags['display-name']}: </span>
-          <span id="ch-msg">${message}</span>
+          ${message === 'Kappa' ? '<img src="https://static-cdn.jtvnw.net/emoticons/v2/25/default/dark/1.0" id="ch-emote">' : `<span id="ch-msg">${message}</span>`}
           </p>`
         )
         clearChat()
@@ -544,7 +555,8 @@
     async function getChannelEmotes(client, message, tags, channel, self) {
       const channelEmotes = async () => {
         let param = $.param({
-          broadcaster_id: twitch_user_id,
+          // broadcaster_id: twitch_user_id,
+          broadcaster_id: '31089858',
         });
         let url = `${TWITCH_EMOTES}?${param}`;
         const { access_token } = await getTwitchToken();
@@ -578,6 +590,10 @@
       const response = await channelSet();
       const x = response.data
       console.log(x);
+    }
+    function qwe() {
+      'https://static-cdn.jtvnw.net/emoticons/v2/<id>/<format>/<theme_mode>/<scale>'
+      'https://static-cdn.jtvnw.net/emoticons/v2/emotesv2_8c568486560d4ebeabf7f86ae97bc85d/animated/dark/3.0'
     }
     // async function createPoll(client, message, tags, channel, self) {
     //   const poll = async () => {
