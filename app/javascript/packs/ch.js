@@ -156,6 +156,10 @@
       console.log(`Loading Spotify Data...`);
       spotifyCurrentTrack();
     });
+    setInterval(function() {
+      console.log(`Upadte Spotify Data...`);
+      spotifyCurrentTrack();
+    }, 30000);
     console.log('Spotify API');
 
     const regexpCommand = new RegExp(/^!([a-zA-Z0-9]+)(?:\W+)?(.*)?/);
@@ -420,11 +424,11 @@
         // const subscriber = '' // subscriber badges
         $('.chat').append(
           `<p>
-          ${tags.subscriber == true ? `<img src=${subscriber} id="ch-badge">` : ''}
-          ${tags.username === twitch_user_name ? `<img src=${broadcaster} id="ch-badge">` : ''}
-          ${tags.mod == true ? `<img src=${moderator} id="ch-badge">` : ''}
-          <span style="color: ${tags.color}" id="ch-user">${tags['display-name']}: </span>
-          ${message === 'Kappa' ? '<img src="https://static-cdn.jtvnw.net/emoticons/v2/25/default/dark/1.0" id="ch-emote">' : `<span id="ch-msg">${message}</span>`}
+            ${tags.subscriber == true ? `<img src=${subscriber} id="ch-badge">` : ''}
+            ${tags.username === twitch_user_name ? `<img src=${broadcaster} id="ch-badge">` : ''}
+            ${tags.mod == true ? `<img src=${moderator} id="ch-badge">` : ''}
+            <span style="color: ${tags.color}" id="ch-user">${tags['display-name']}: </span>
+            <span id="ch-msg">${message.replace('Kappa', '<img src="https://static-cdn.jtvnw.net/emoticons/v2/25/default/dark/1.0" id="ch-emote">')}</span>
           </p>`
         )
         clearChat()
