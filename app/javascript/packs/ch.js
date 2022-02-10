@@ -31,6 +31,13 @@
     const NEXT_SONG =            'https://api.spotify.com/v1/me/player/next';
     const NOW_PLAYING =          'https://api.spotify.com/v1/me/player/currently-playing';
 
+    /* EMOTES CONFIG */
+    const emoteConfig = {
+      format: 'static',   // [static, animated]
+      scale:  '1.0',      // [1.0, 2.0, 3.0]
+      theme:  'dark'      // [light, dark]
+    }
+
     /* TWITCH API */
     const getTwitchToken = async () => {
       let param = $.param({
@@ -157,8 +164,10 @@
       spotifyCurrentTrack();
     });
     setInterval(function() {
-      console.log(`Upadte Spotify Data...`);
-      spotifyCurrentTrack();
+      const response = getNowPlaying();
+      if (response.status === 200) {
+        spotifyCurrentTrack();
+      }
     }, 30000);
     console.log('Spotify API');
 
@@ -419,6 +428,7 @@
 
     function onMessageHandler (channel, tags, message, self) {
       if (message.charAt(0) !== prefix) {
+        replaceEmote();
         const broadcaster = 'https://static-cdn.jtvnw.net/badges/v1/5527c58c-fb7d-422d-b71b-f309dcb85cc1/1'
         const moderator = 'https://static-cdn.jtvnw.net/badges/v1/3267646d-33f0-4b17-b3df-f923a41db1d0/1'
         // const subscriber = '' // subscriber badges
@@ -431,7 +441,7 @@
             <span id="ch-msg">${message.replace('Kappa', '<img src="https://static-cdn.jtvnw.net/emoticons/v2/25/default/dark/1.0" id="ch-emote">')}</span>
           </p>`
         )
-        clearChat()
+        clearChat();
       }
     }
     function clearChat() {
@@ -439,6 +449,16 @@
       let msg_first = $('.chat').children(':first');
       if (msg_limit > 5)
         msg_first.remove();
+    }
+    async function replaceEmote() {
+      var x = '';
+      var y = [];
+      const emotes = await getEmotesGlobal();
+      $.each(emotes, function(i, n) {
+        x = `https://static-cdn.jtvnw.net/emoticons/v2/${n.id}/${emoteConfig.format}/${emoteConfig.theme}/${emoteConfig.scale}`;
+        y.push({name: n.name, link: x});
+      });
+      return y;
     }
 
     /* COMMANDS */
@@ -553,8 +573,9 @@
         }).then((res) => res.json());
       };
       const response = await emotesGlobal();
-      const x = response.data
+      const x = response.data;
       console.log(x);
+      return x;
     }
     async function getChannelEmotes(client, message, tags, channel, self) {
       const channelEmotes = async () => {
@@ -572,7 +593,7 @@
         }).then((res) => res.json());
       };
       const response = await channelEmotes();
-      const x = response.data
+      const x = response.data;
       console.log(x);
       return x[0];
     }
