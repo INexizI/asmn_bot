@@ -163,12 +163,10 @@
       console.log(`Loading Spotify Data...`);
       spotifyCurrentTrack();
     });
-    setInterval(function() {
-      const response = getNowPlaying();
-      if (response.status === 200) {
-        spotifyCurrentTrack();
-      }
-    }, 30000);
+    setInterval(async function() {
+      const response = await getNowPlaying();
+      if (response.status === 200) spotifyCurrentTrack();
+    }, 15000);
     console.log('Spotify API');
 
     const regexpCommand = new RegExp(/^!([a-zA-Z0-9]+)(?:\W+)?(.*)?/);
@@ -355,6 +353,10 @@
       //   changeTitle(client, message, tags, channel, self);
       //   return;
       // }
+      if (msg === '!global') {
+        getEmotesGlobal(client, message, tags, channel, self);
+        return;
+      }
       if (msg === '!emotes') {
         getChannelEmotes(client, message, tags, channel, self);
         return;
@@ -426,19 +428,30 @@
       // )
     }
 
-    function onMessageHandler (channel, tags, message, self) {
+    async function onMessageHandler (channel, tags, message, self) {
       if (message.charAt(0) !== prefix) {
-        replaceEmote();
+        const emote = await replaceEmote();
+
         const broadcaster = 'https://static-cdn.jtvnw.net/badges/v1/5527c58c-fb7d-422d-b71b-f309dcb85cc1/1'
         const moderator = 'https://static-cdn.jtvnw.net/badges/v1/3267646d-33f0-4b17-b3df-f923a41db1d0/1'
         // const subscriber = '' // subscriber badges
+        $.each(emote, function(i, n) {
+          if (message.indexOf(n.name) !== -1) {
+            let x = n.name;
+            let fe = message.split(' ');
+            for (let i = 0; i < fe.length; i++) {
+              if (fe[i] == n.name)
+                message = message.replaceAll(x, `<img src=${n.link} id="ch-emote">`);
+            }
+          }
+        });
         $('.chat').append(
           `<p>
             ${tags.subscriber == true ? `<img src=${subscriber} id="ch-badge">` : ''}
             ${tags.username === twitch_user_name ? `<img src=${broadcaster} id="ch-badge">` : ''}
             ${tags.mod == true ? `<img src=${moderator} id="ch-badge">` : ''}
             <span style="color: ${tags.color}" id="ch-user">${tags['display-name']}: </span>
-            <span id="ch-msg">${message.replace('Kappa', '<img src="https://static-cdn.jtvnw.net/emoticons/v2/25/default/dark/1.0" id="ch-emote">')}</span>
+            <span id="ch-msg">${message}</span>
           </p>`
         )
         clearChat();
@@ -451,14 +464,16 @@
         msg_first.remove();
     }
     async function replaceEmote() {
-      var x = '';
-      var y = [];
       const emotes = await getEmotesGlobal();
+      var x = [];
       $.each(emotes, function(i, n) {
-        x = `https://static-cdn.jtvnw.net/emoticons/v2/${n.id}/${emoteConfig.format}/${emoteConfig.theme}/${emoteConfig.scale}`;
-        y.push({name: n.name, link: x});
+        x.push({
+          id: n.id,
+          name: n.name,
+          link: `https://static-cdn.jtvnw.net/emoticons/v2/${n.id}/${emoteConfig.format}/${emoteConfig.theme}/${emoteConfig.scale}`
+        });
       });
-      return y;
+      return x;
     }
 
     /* COMMANDS */
@@ -574,7 +589,7 @@
       };
       const response = await emotesGlobal();
       const x = response.data;
-      console.log(x);
+      // console.log(x);
       return x;
     }
     async function getChannelEmotes(client, message, tags, channel, self) {
