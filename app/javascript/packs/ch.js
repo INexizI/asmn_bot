@@ -159,10 +159,14 @@
     //     return x
     //   }
     // }
-    $('#btn').click(function() {
+    $('#btn-info').click(function() {
       console.log(`Loading Spotify Data...`);
       spotifyCurrentTrack();
     });
+    $('#btn-next').click(function() {
+      console.log(`Skip song...`);
+      nextSong();
+    })
     setInterval(async function() {
       const response = await getNowPlaying();
       if (response.status === 200) spotifyCurrentTrack();
@@ -430,18 +434,18 @@
 
     async function onMessageHandler (channel, tags, message, self) {
       if (message.charAt(0) !== prefix) {
-        const emote = await replaceEmote();
-
         const broadcaster = 'https://static-cdn.jtvnw.net/badges/v1/5527c58c-fb7d-422d-b71b-f309dcb85cc1/1'
         const moderator = 'https://static-cdn.jtvnw.net/badges/v1/3267646d-33f0-4b17-b3df-f923a41db1d0/1'
         // const subscriber = '' // subscriber badges
+
+        const emote = await replaceEmote();
         $.each(emote, function(i, n) {
-          if (message.indexOf(n.name) !== -1) {
+          if (message.includes(n.name)) {
             let x = n.name;
-            let fe = message.split(' ');
-            for (let i = 0; i < fe.length; i++) {
-              if (fe[i] == n.name)
-                message = message.replaceAll(x, `<img src=${n.link} id="ch-emote">`);
+            let y = message.split(' ');
+            for (let i = 0; i < y.length; i++) {
+              if (y[i] === n.name)
+                message = message.replace(x, `<img src=${n.link} id="ch-emote">`);
             }
           }
         });
@@ -465,15 +469,17 @@
     }
     async function replaceEmote() {
       const emotes = await getEmotesGlobal();
-      var x = [];
-      $.each(emotes, function(i, n) {
-        x.push({
+      const channelEmotes = await getChannelEmotes();
+      let x = emotes.concat(channelEmotes);
+      let y = [];
+      $.each(x, function(i, n) {
+        y.push({
           id: n.id,
           name: n.name,
           link: `https://static-cdn.jtvnw.net/emoticons/v2/${n.id}/${emoteConfig.format}/${emoteConfig.theme}/${emoteConfig.scale}`
         });
       });
-      return x;
+      return y;
     }
 
     /* COMMANDS */
@@ -596,7 +602,8 @@
       const channelEmotes = async () => {
         let param = $.param({
           // broadcaster_id: twitch_user_id,
-          broadcaster_id: '31089858',
+          broadcaster_id: '31089858', // dreadztv
+          // broadcaster_id: '22484632', // forsen
         });
         let url = `${TWITCH_EMOTES}?${param}`;
         const { access_token } = await getTwitchToken();
@@ -609,12 +616,14 @@
       };
       const response = await channelEmotes();
       const x = response.data;
-      console.log(x);
-      return x[0];
+      // console.log(x);
+      return x;
     }
     async function getChannelEmotesSet(client, message, tags, channel, self) {
       const channelSet = async () => {
-        const { emote_set_id } = await getChannelEmotes();
+        // const { emote_set_id } = await getChannelEmotes();
+        const response = await getChannelEmotes();
+        const emote_set_id = response[0].emote_set_id;
         let param = $.param({
           emote_set_id: emote_set_id,
         });
@@ -630,10 +639,6 @@
       const response = await channelSet();
       const x = response.data
       console.log(x);
-    }
-    function qwe() {
-      'https://static-cdn.jtvnw.net/emoticons/v2/<id>/<format>/<theme_mode>/<scale>'
-      'https://static-cdn.jtvnw.net/emoticons/v2/emotesv2_8c568486560d4ebeabf7f86ae97bc85d/animated/dark/3.0'
     }
     // async function createPoll(client, message, tags, channel, self) {
     //   const poll = async () => {
