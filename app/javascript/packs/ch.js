@@ -32,7 +32,7 @@
     const NOW_PLAYING =          'https://api.spotify.com/v1/me/player/currently-playing';
 
     /* EMOTES CONFIG */
-    const emoteConfig = {
+    const iconConfig = {
       format: 'static',   // [static, animated]
       scale:  '1.0',      // [1.0, 2.0, 3.0]
       theme:  'dark'      // [light, dark]
@@ -358,7 +358,7 @@
       //   return;
       // }
       if (msg === '!global') {
-        getEmotesGlobal(client, message, tags, channel, self);
+        replaceBadge();
         return;
       }
       if (msg === '!emotes') {
@@ -434,6 +434,8 @@
 
     async function onMessageHandler (channel, tags, message, self) {
       if (message.charAt(0) !== prefix) {
+        console.log(tags);
+        console.log(tags.badges);
         const broadcaster = 'https://static-cdn.jtvnw.net/badges/v1/5527c58c-fb7d-422d-b71b-f309dcb85cc1/1'
         const moderator = 'https://static-cdn.jtvnw.net/badges/v1/3267646d-33f0-4b17-b3df-f923a41db1d0/1'
         // const subscriber = '' // subscriber badges
@@ -476,11 +478,35 @@
         y.push({
           id: n.id,
           name: n.name,
-          link: `https://static-cdn.jtvnw.net/emoticons/v2/${n.id}/${emoteConfig.format}/${emoteConfig.theme}/${emoteConfig.scale}`
+          link: `https://static-cdn.jtvnw.net/emoticons/v2/${n.id}/${iconConfig.format}/${iconConfig.theme}/${iconConfig.scale}`
         });
       });
+      // console.log(y);
       return y;
-    }
+    };
+    async function replaceBadge() {
+      const badges = await getBadgesGlobal();
+      let x = [];
+      $.each(badges, function(i, n) {
+        if (n.versions.length == 1) {
+          x.push({
+            name: n.set_id,
+            link: n.versions[0].image_url_1x,
+          });
+          // console.log(`${n.set_id}: ${n.versions[0].image_url_1x}`);
+        } else if (n.versions.length > 1) {
+          for (let k = 0; k < n.versions.length; k++) {
+            x.push({
+              name: `${n.set_id}_${n.versions[k].id}`,
+              link: n.versions[0].image_url_1x,
+            });
+            // console.log(`${n.set_id}_${n.versions[k].id}: ${n.versions[k].image_url_1x}`);
+          }
+        }
+      });
+      // console.log(x);
+      return x;
+    };
 
     /* COMMANDS */
     function ping(client, message, tags, channel, self) {
@@ -549,7 +575,7 @@
       }
       client.action(channel, `@${tags.username}, you've been following the channel since [${date.toLocaleDateString('en-UK', options)}]`)
     }
-    async function getChannelBadgesGlobal(client, message, tags, channel, self) {
+    async function getBadgesGlobal(client, message, tags, channel, self) {
       const channelBadgesGlobal = async () => {
         let url = `${TWITCH_BADGES_GLOBAL}`;
         const { access_token } = await getTwitchToken();
@@ -562,7 +588,8 @@
       };
       const response = await channelBadgesGlobal();
       const x = response.data
-      console.log(x);
+      // console.log(x);
+      return x;
     }
     async function getChannelBadges(client, message, tags, channel, self) {
       const channelBadges = async () => {

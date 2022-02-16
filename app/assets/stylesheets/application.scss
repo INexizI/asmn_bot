@@ -70,8 +70,19 @@ body {
 
 .btn {
   width: 150px;
-  margin: -40px 10px;
+  margin: -40px 15px;
   text-align: center;
+
+  button {
+    padding: 3px 5px;
+    border: 1px solid;
+    border-radius: 10px;
+    font-size: 12px;
+    font-weight: 600;
+    font-family: monospace;
+    color: #1db954;
+    background-color: #181818;
+  }
 }
 
 .chat {
