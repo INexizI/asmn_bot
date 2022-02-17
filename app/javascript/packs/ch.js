@@ -434,28 +434,26 @@
 
     async function onMessageHandler (channel, tags, message, self) {
       if (message.charAt(0) !== prefix) {
-        console.log(tags);
-        console.log(tags.badges);
-        const broadcaster = 'https://static-cdn.jtvnw.net/badges/v1/5527c58c-fb7d-422d-b71b-f309dcb85cc1/1'
-        const moderator = 'https://static-cdn.jtvnw.net/badges/v1/3267646d-33f0-4b17-b3df-f923a41db1d0/1'
-        // const subscriber = '' // subscriber badges
+        // console.log(tags);
 
-        const emote = await replaceEmote();
-        $.each(emote, function(i, n) {
-          if (message.includes(n.name)) {
-            let x = n.name;
-            let y = message.split(' ');
-            for (let i = 0; i < y.length; i++) {
-              if (y[i] === n.name)
-                message = message.replace(x, `<img src=${n.link} id="ch-emote">`);
-            }
-          }
+        const b = await replaceBadge();
+        let badge = '';
+        $.each(Object.keys(tags.badges), function(i, n) {
+          const result = b.find( ({ name }) => name === n );
+          badge += `<img src=${result.link} id="ch-badge">`;
         });
+
+        const e = await replaceEmote();
+        let m = [];
+        $.each(message.split(' '), function(i, n) {
+          const result = e.find( ({ name }) => name === n );
+          typeof result == 'object' ? m.push(`<img src=${result.link} id="ch-emote">`) : m.push(n);
+          message = m.join(' ');
+        });
+
         $('.chat').append(
           `<p>
-            ${tags.subscriber == true ? `<img src=${subscriber} id="ch-badge">` : ''}
-            ${tags.username === twitch_user_name ? `<img src=${broadcaster} id="ch-badge">` : ''}
-            ${tags.mod == true ? `<img src=${moderator} id="ch-badge">` : ''}
+            <span id="ch-block">${badge}</span>
             <span style="color: ${tags.color}" id="ch-user">${tags['display-name']}: </span>
             <span id="ch-msg">${message}</span>
           </p>`
@@ -488,21 +486,19 @@
       const badges = await getBadgesGlobal();
       let x = [];
       $.each(badges, function(i, n) {
-        if (n.versions.length == 1) {
+        if (n.versions.length == 1)
           x.push({
             name: n.set_id,
             link: n.versions[0].image_url_1x,
           });
           // console.log(`${n.set_id}: ${n.versions[0].image_url_1x}`);
-        } else if (n.versions.length > 1) {
-          for (let k = 0; k < n.versions.length; k++) {
+        else if (n.versions.length > 1)
+          for (let k = 0; k < n.versions.length; k++)
             x.push({
               name: `${n.set_id}_${n.versions[k].id}`,
               link: n.versions[0].image_url_1x,
             });
             // console.log(`${n.set_id}_${n.versions[k].id}: ${n.versions[k].image_url_1x}`);
-          }
-        }
       });
       // console.log(x);
       return x;
