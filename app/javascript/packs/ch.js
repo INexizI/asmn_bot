@@ -13,6 +13,9 @@
     const spotify_refresh_token = process.env.SREFRESH_TOKEN;
 
     const basic = Buffer.from(`${spotify_client_id}:${spotify_client_secret}`).toString('base64');
+    const sleep = ms => new Promise(res => setTimeout(() => res(), ms));
+    const regexpCommand = new RegExp(/^!([a-zA-Z0-9]+)(?:\W+)?(.*)?/);
+    const prefix = '#';
     let skip_count = 0;
 
     /* ENDPOINTS */
@@ -56,8 +59,7 @@
         method: 'POST',
       });
 
-      const x = await response.json()
-      return x
+      return await response.json()
     }
     // const useTwitchToken = async () => {
     //   const { access_token } = await getTwitchToken();
@@ -80,8 +82,7 @@
         }),
       });
 
-      const x = await response.json()
-      return x
+      return await response.json()
     }
     const getNowPlaying = async () => {
       const { access_token } = await getAccessToken()
@@ -108,7 +109,7 @@
         },
       })
     }
-    const spotifyCurrentTrack = async (_, res) => {
+    const spotifyCurrentTrack = async () => {
       const response = await getNowPlaying();
       // console.log(`response status: ${response.status}`)
       if (response.status === 204 || response.status > 400) {
@@ -159,22 +160,21 @@
     //     return x
     //   }
     // }
-    $('#btn-info').click(function() {
-      console.log(`Loading Spotify Data...`);
-      spotifyCurrentTrack();
-    });
-    $('#btn-next').click(function() {
-      console.log(`Skip song...`);
-      nextSong();
-    })
-    setInterval(async function() {
-      const response = await getNowPlaying();
-      if (response.status === 200) spotifyCurrentTrack();
-    }, 15000);
-    console.log('Spotify API');
 
-    const regexpCommand = new RegExp(/^!([a-zA-Z0-9]+)(?:\W+)?(.*)?/);
-    const prefix = '#';
+    $('#btn-info, #btn-q').click(() =>
+      spotifyCurrentTrack()
+        .then(console.log(`Loading Spotify Data...`))
+    );
+    $('#btn-next, #btn-forward').click(() =>
+      Promise.all([
+        nextSong(),
+        sleep(500).then(() => spotifyCurrentTrack())]
+      ).then(console.log(`Skip song...`))
+    );
+    setInterval(() =>
+      getNowPlaying()
+        .then(res => res.status === 200 ? spotifyCurrentTrack() : console.log(res.status)), 15000);
+    console.log('Spotify API');
 
     /* BOT CONNECTION */
     const config = {
@@ -203,7 +203,7 @@
         response: (user) =>
           `@${user} rolls [ ${Math.floor(Math.random() * 100) + 1} ]`
       },
-      github: { response: 'https://github.com/INexizI' }
+      github: { response: process.env.GITHUB }
     }
 
     const allSound = {
