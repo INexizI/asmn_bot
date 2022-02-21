@@ -31,8 +31,15 @@
     const TWITCH_PREDICTIONS =   'https://api.twitch.tv/helix/predictions';
 
     const TOKEN_ENDPOINT =       'https://accounts.spotify.com/api/token';
-    const NEXT_SONG =            'https://api.spotify.com/v1/me/player/next';
-    const NOW_PLAYING =          'https://api.spotify.com/v1/me/player/currently-playing';
+    const NOW_PLAYING =          'https://api.spotify.com/v1/me/player/currently-playing';  // get
+    const PREVIOUS_SONG =        'https://api.spotify.com/v1/me/player/previous';           // post
+    const NEXT_SONG =            'https://api.spotify.com/v1/me/player/next';               // post
+    const PAUSE_SONG =           'https://api.spotify.com/v1/me/player/pause';              // put
+    const PLAY_SONG =            'https://api.spotify.com/v1/me/player/play';               // put
+    const SHUFFLE_SONG =         'https://api.spotify.com/v1/me/player/shuffle';            // put
+    const REPEAT_MODE =          'https://api.spotify.com/v1/me/player/repeat';             // put
+    const VOLUME =               'https://api.spotify.com/v1/me/player/volume';             // put
+    const RECENTLY_PLAY =        'https://api.spotify.com/v1/me/player/recently-played';    // get
 
     /* EMOTES CONFIG */
     const iconConfig = {
@@ -100,10 +107,55 @@
         },
       })
     }
+    const shuffleSong = async () => {
+      const { access_token } = await getAccessToken()
+      return fetch(SHUFFLE_SONG, {
+        method: 'PUT',
+        headers: {
+          Authorization: `Bearer ${access_token}`,
+        },
+      })
+    }
+    const repeatSong = async () => {
+      const { access_token } = await getAccessToken()
+      return fetch(REPEAT_MODE, {
+        method: 'PUT',
+        headers: {
+          Authorization: `Bearer ${access_token}`,
+        },
+      })
+    }
+    const prevSong = async () => {
+      const { access_token } = await getAccessToken()
+      return fetch(PREVIOUS_SONG, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${access_token}`,
+        },
+      })
+    }
     const nextSong = async () => {
       const { access_token } = await getAccessToken()
       return fetch(NEXT_SONG, {
         method: 'POST',
+        headers: {
+          Authorization: `Bearer ${access_token}`,
+        },
+      })
+    }
+    const pauseSong = async () => {
+      const { access_token } = await getAccessToken()
+      return fetch(PAUSE_SONG, {
+        method: 'PUT',
+        headers: {
+          Authorization: `Bearer ${access_token}`,
+        },
+      })
+    }
+    const playSong = async () => {
+      const { access_token } = await getAccessToken()
+      return fetch(PLAY_SONG, {
+        method: 'PUT',
         headers: {
           Authorization: `Bearer ${access_token}`,
         },
@@ -162,18 +214,17 @@
     // }
 
     $('#btn-info, #btn-q').click(() =>
-      spotifyCurrentTrack()
-        .then(console.log(`Loading Spotify Data...`))
-    );
+      spotifyCurrentTrack().then(console.log(`Loading Spotify Data...`)));
     $('#btn-next, #btn-forward').click(() =>
-      Promise.all([
-        nextSong(),
-        sleep(500).then(() => spotifyCurrentTrack())]
-      ).then(console.log(`Skip song...`))
-    );
+      Promise.all([nextSong(), sleep(500).then(() => spotifyCurrentTrack())]));
+    $('#btn-previous').click(() =>
+      Promise.all([prevSong(), sleep(500).then(() => spotifyCurrentTrack())]));
+    $('#btn-pause').click(() =>
+      Promise.all([pauseSong(), sleep(500).then(() => spotifyCurrentTrack())]));
+    $('#btn-play').click(() =>
+      Promise.all([playSong(), sleep(500).then(() => spotifyCurrentTrack())]));
     setInterval(() =>
-      getNowPlaying()
-        .then(res => res.status === 200 ? spotifyCurrentTrack() : console.log(res.status)), 15000);
+      getNowPlaying().then(res => res.status === 200 ? spotifyCurrentTrack() : ''), 15000);
     console.log('Spotify API');
 
     /* BOT CONNECTION */
@@ -291,15 +342,11 @@
 
       // commands for mods
       if (tags.mod == true || tags.username === twitch_user_name) {
-        if (msg === '!next') {
-          nextSong();
-          client.action(channel, `Song has been skipped`);
-          return;
-        }
-        // if (msg === '!playlist') {
-        //   playlist(client, message, tags, channel, self);
-        //   return;
-        // }
+        if (msg === '!next') Promise.all([nextSong(), sleep(1000).then(() => spotifyCurrentTrack())]).then(client.action(channel, `Song has been skipped to next`));
+        if (msg === '!prev') Promise.all([prevSong(), sleep(1000).then(() => spotifyCurrentTrack())]).then(client.action(channel, `Song has been skipped to previous`));
+        if (msg === '!pause') Promise.all([pauseSong(), sleep(1000).then(() => spotifyCurrentTrack())]);
+        if (msg === '!play') Promise.all([playSong(), sleep(1000).then(() => spotifyCurrentTrack())]);
+        // if (msg === '!playlist') playlist(client, message, tags, channel, self);
       }
 
       // commands for all
@@ -307,8 +354,8 @@
         var x = 'Sound commands:';
         $.each(allSound, function(i, n) {
           x += ` #${i}`;
-        })
-        client.action(channel, x)
+        });
+        client.action(channel, x);
       }
       if (msg.charAt(0) === '#') {
         let soundCommand = message.substring(1);
@@ -318,10 +365,7 @@
         audio.volume = 0.1;
         audio.play();
       }
-      if (msg === '!ping') {
-        ping(client, message, tags, channel, self);
-        return;
-      }
+      if (msg === '!ping') ping(client, message, tags, channel, self);
       if (msg.slice(0, 4) === '!ban') {
         const ban = {
           1: 'Is permanently banned from this channel',
@@ -332,10 +376,7 @@
         var n = Math.floor(Math.random() * 4) + 1;
         client.action(channel, `${msg.slice(5)} ${ban[n]}`);
       }
-      if (msg === '!song') {
-        song(client, message, tags, channel, self);
-        return;
-      }
+      if (msg === '!song') song(client, message, tags, channel, self);
       if (msg === 'skip') { // need to validate uniq user message by tags['user-id']
         skip_count++;
         if (skip_count == 3) {
@@ -345,30 +386,14 @@
           return;
         }
       }
-      if (msg === '!follow') {
-        getUserFollowTime(client, message, tags, channel, self);
-        return;
-      }
-      if (msg === '!info') {
-        getStreamInfo(client, message, tags, channel, self);
-        return;
-      }
-      // if (msg.slice(0, 6) === '!title') {
-      //   changeTitle(client, message, tags, channel, self);
-      //   return;
-      // }
-      if (msg === '!global') {
-        replaceBadge();
-        return;
-      }
-      if (msg === '!emotes') {
-        getChannelEmotes(client, message, tags, channel, self);
-        return;
-      }
-      if (msg === '!set') {
-        getChannelEmotesSet(client, message, tags, channel, self);
-        return;
-      }
+      if (msg === '!follow') getUserFollowTime(client, message, tags, channel, self);
+
+      // test commands
+      if (msg === '!info') getStreamInfo(client, message, tags, channel, self);
+      // if (msg.slice(0, 6) === '!title') changeTitle(client, message, tags, channel, self);
+      if (msg === '!global') replaceBadge();
+      if (msg === '!emotes') getChannelEmotes(client, message, tags, channel, self);
+      if (msg === '!set') getChannelEmotesSet(client, message, tags, channel, self);
     })
 
     /* FUNCTIONS */
