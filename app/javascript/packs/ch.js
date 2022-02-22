@@ -31,6 +31,7 @@
     const TWITCH_PREDICTIONS =   'https://api.twitch.tv/helix/predictions';
 
     const TOKEN_ENDPOINT =       'https://accounts.spotify.com/api/token';
+    const PLAYBACK_STATE =       'https://api.spotify.com/v1/me/player';                    // get
     const NOW_PLAYING =          'https://api.spotify.com/v1/me/player/currently-playing';  // get
     const PREVIOUS_SONG =        'https://api.spotify.com/v1/me/player/previous';           // post
     const NEXT_SONG =            'https://api.spotify.com/v1/me/player/next';               // post
@@ -46,7 +47,7 @@
       format: 'static',   // [static, animated]
       scale:  '1.0',      // [1.0, 2.0, 3.0]
       theme:  'dark'      // [light, dark]
-    }
+    };
 
     /* TWITCH API */
     const getTwitchToken = async () => {
@@ -60,20 +61,20 @@
           'channel:manage:broadcast',
           'channel:manage:predictions'
         ]
-      })
+      });
       let url = `${TWITCH_TOKEN}?${param}`
       const response = await fetch(url, {
         method: 'POST',
       });
 
-      return await response.json()
-    }
+      return await response.json();
+    };
     // const useTwitchToken = async () => {
     //   const { access_token } = await getTwitchToken();
     //   /*
     //       work with access_token
     //   */
-    // }
+    // };
 
     /* SPOTIFY API */
     const getAccessToken = async () => {
@@ -89,42 +90,50 @@
         }),
       });
 
-      return await response.json()
-    }
+      return await response.json();
+    };
     const getNowPlaying = async () => {
-      const { access_token } = await getAccessToken()
+      const { access_token } = await getAccessToken();
       return fetch(NOW_PLAYING, {
         headers: {
           Authorization: `Bearer ${access_token}`,
         },
-      })
-    }
-    const getCurrentPlaylist = async () => {
-      const { access_token } = await getAccessToken()
-      return fetch(PLAYLIST_ENDPOINT, {
+      });
+    };
+    const getPlaybackState = async () => {
+      const { access_token } = await getAccessToken();
+      return fetch(PLAYBACK_STATE, {
         headers: {
           Authorization: `Bearer ${access_token}`,
         },
-      })
-    }
-    const shuffleSong = async () => {
-      const { access_token } = await getAccessToken()
-      return fetch(SHUFFLE_SONG, {
+      });
+    };
+    // const getCurrentPlaylist = async () => {
+    //   const { access_token } = await getAccessToken();
+    //   return fetch(PLAYLIST_ENDPOINT, {
+    //     headers: {
+    //       Authorization: `Bearer ${access_token}`,
+    //     },
+    //   });
+    // };
+    const shuffleSong = async (param) => {
+      const { access_token } = await getAccessToken();
+      return fetch(`${SHUFFLE_SONG}?state=${param}`, {
         method: 'PUT',
         headers: {
           Authorization: `Bearer ${access_token}`,
         },
-      })
-    }
-    const repeatSong = async () => {
-      const { access_token } = await getAccessToken()
-      return fetch(REPEAT_MODE, {
+      });
+    };
+    const repeatSong = async (param) => {
+      const { access_token } = await getAccessToken();
+      return fetch(`${REPEAT_MODE}?state=${param}`, {
         method: 'PUT',
         headers: {
           Authorization: `Bearer ${access_token}`,
         },
-      })
-    }
+      });
+    };
     const prevSong = async () => {
       const { access_token } = await getAccessToken()
       return fetch(PREVIOUS_SONG, {
@@ -133,34 +142,34 @@
           Authorization: `Bearer ${access_token}`,
         },
       })
-    }
+    };
     const nextSong = async () => {
-      const { access_token } = await getAccessToken()
+      const { access_token } = await getAccessToken();
       return fetch(NEXT_SONG, {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${access_token}`,
         },
-      })
-    }
+      });
+    };
     const pauseSong = async () => {
-      const { access_token } = await getAccessToken()
+      const { access_token } = await getAccessToken();
       return fetch(PAUSE_SONG, {
         method: 'PUT',
         headers: {
           Authorization: `Bearer ${access_token}`,
         },
-      })
-    }
+      });
+    };
     const playSong = async () => {
-      const { access_token } = await getAccessToken()
+      const { access_token } = await getAccessToken();
       return fetch(PLAY_SONG, {
         method: 'PUT',
         headers: {
           Authorization: `Bearer ${access_token}`,
         },
-      })
-    }
+      });
+    };
     const spotifyCurrentTrack = async () => {
       const response = await getNowPlaying();
       // console.log(`response status: ${response.status}`)
@@ -198,8 +207,8 @@
         const x = song.item;
         return x
       }
-    }
-    // const spotifyPlaylist = async (_, res) => {
+    };
+    // const spotifyPlaylist = async () => {
     //   const response = await getCurrentPlaylist();
     //   console.log(`response status: ${response.status}`);
     //   if (response.status === 204 || response.status > 400) {
@@ -211,9 +220,9 @@
     //     const x = song.items;
     //     return x
     //   }
-    // }
+    // };
 
-    $('#btn-info, #btn-q').click(() =>
+    $('#btn-info').click(() =>
       spotifyCurrentTrack().then(console.log(`Loading Spotify Data...`)));
     $('#btn-next, #btn-forward').click(() =>
       Promise.all([nextSong(), sleep(500).then(() => spotifyCurrentTrack())]));
@@ -223,6 +232,34 @@
       Promise.all([pauseSong(), sleep(500).then(() => spotifyCurrentTrack())]));
     $('#btn-play').click(() =>
       Promise.all([playSong(), sleep(500).then(() => spotifyCurrentTrack())]));
+    $('#btn-shuffle').click(() =>
+      getPlaybackState()
+        .then(res => res.json())
+        .then(res => res.shuffle_state === false ? shuffleSong(true).then($('#btn-shuffle').css('border-bottom', '1px solid')) : shuffleSong(false).then($('#btn-shuffle').removeAttr('style')))
+        // .then(res => {
+        //   if (res.shuffle_state === false) {
+        //     shuffleSong(true);
+        //     $('#btn-shuffle').css('border-bottom', '1px solid');
+        //   } else {
+        //     shuffleSong(false);
+        //     $('#btn-shuffle').removeAttr('style');
+        //   }
+        // })
+    );
+    $('#btn-repeat').click(() =>
+      getPlaybackState()
+        .then(res => res.json())
+        .then(res => res.repeat_state === 'off' ? repeatSong('track').then($('#btn-repeat').css('border-bottom', '1px solid')) : repeatSong('off').then($('#btn-repeat').removeAttr('style')))
+        // .then(res => {
+        //   if (res.repeat_state === 'off') {
+        //     repeatSong('track');
+        //     $('#btn-repeat').css('border-bottom', '1px solid');
+        //   } else {
+        //     repeatSong('off');
+        //     $('#btn-repeat').removeAttr('style');
+        //   }
+        // })
+    );
     setInterval(() =>
       getNowPlaying().then(res => res.status === 200 ? spotifyCurrentTrack() : ''), 15000);
     console.log('Spotify API');
