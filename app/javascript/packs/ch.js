@@ -69,12 +69,15 @@
 
       return await response.json();
     };
-    // const useTwitchToken = async () => {
-    //   const { access_token } = await getTwitchToken();
-    //   /*
-    //       work with access_token
-    //   */
-    // };
+    const useTwitchToken = async (url, param) => {
+      const { access_token } = await getTwitchToken();
+      return fetch(`${url}?${param}`, {
+        headers: {
+          Authorization: `Bearer ${access_token}`,
+          'Client-Id': twitch_client_id,
+        },
+      });
+    };
 
     /* SPOTIFY API */
     const getAccessToken = async () => {
@@ -204,8 +207,7 @@
           // $('#sp-albumName').text(album);
           $('#sp-albumImg').html(`<img src="${albumImageUrl}">`);
         }
-        const x = song.item;
-        return x
+        return song.item;
       }
     };
     // const spotifyPlaylist = async () => {
@@ -426,7 +428,7 @@
       if (msg === '!follow') getUserFollowTime(client, message, tags, channel, self);
 
       // test commands
-      if (msg === '!info') getStreamInfo(client, message, tags, channel, self);
+      if (msg === '!info') getStreamInfo(client, message, tags, channel, self).then(res => console.log(res));
       // if (msg.slice(0, 6) === '!title') changeTitle(client, message, tags, channel, self);
       if (msg === '!global') replaceBadge();
       if (msg === '!emotes') getChannelEmotes(client, message, tags, channel, self);
@@ -568,18 +570,13 @@
 
     /* COMMANDS */
     function ping(client, message, tags, channel, self) {
-      client.ping().then(function(data) {
+      client.ping().then(data => {
         let ping = Math.floor(Math.round(data*1000))
         client.action(channel, `@${tags.username}, your ping is ${ping}ms`)
-      })
+      });
     }
     function song(client, message, tags, channel, self) {
-      const getSong = async () => {
-        const cs = await spotifyCurrentTrack();
-        if (typeof cs !== 'undefined')
-          client.action(channel, `${cs.artists.map((_artist) => _artist.name).join(', ')} - ${cs.name} 👉 ${cs.external_urls.spotify} 👈`)
-      }
-      getSong()
+      spotifyCurrentTrack().then(res => typeof res === 'object' ? client.action(channel, `${res.artists.map((_artist) => _artist.name).join(', ')} - ${res.name} 👉 ${res.external_urls.spotify} 👈`) : '');
     }
     // function playlist(client, message, tags, channel, self) {
     //   const getPlaylist = async () => {
@@ -605,22 +602,12 @@
     //   return x;
     // }
     async function getUserFollowTime(client, message, tags, channel, self) {
-      const followTime = async () => {
-        let param = $.param({
-          to_id: twitch_user_id,
-          from_login: tags.username
-        });
-        let url = `${TWITCH_FOLLOW}?${param}`;
-        const { access_token } = await getTwitchToken();
-        return fetch(url, {
-          headers: {
-            Authorization: `Bearer ${access_token}`,
-            'Client-Id': twitch_client_id,
-          },
-        }).then((res) => res.json());
-      };
-      const response = await followTime();
-      const x = response.data[0].followed_at;
+      let param = $.param({
+        to_id: twitch_user_id,
+        from_login: tags.username
+      });
+      
+      const x = await useTwitchToken(TWITCH_FOLLOW, param).then(res => res.json()).then(res => res.data[0].followed_at);
       const date = new Date(x.split('T').shift());
       const options = {
         // weekday: 'short',          // long, short, narrow
@@ -778,23 +765,11 @@
     //   console.log(x);
     // }
     async function getStreamInfo(client, message, tags, channel, self) {
-      const getInfo = async () => {
-        let param = $.param({
-          broadcaster_id: twitch_user_id,
-        });
-        let url = `${TWITCH_INFO}?${param}`;
-        const { access_token } = await getTwitchToken();
-        return fetch(url, {
-          headers: {
-            Authorization: `Bearer ${access_token}`,
-            'Client-Id': twitch_client_id,
-          },
-        }).then((res) => res.json());
-      }
+      let param = $.param({
+        broadcaster_id: twitch_user_id,
+      });
 
-      const response = await getInfo();
-      const x = response.data[0];
-      console.log(x);
+      return useTwitchToken(TWITCH_INFO, param).then(res => res.json()).then(res => res.data[0]);
     }
     // async function changeTitle(client, message, tags, channel, self) {
     //   const newTitle = async () => {
