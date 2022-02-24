@@ -5,6 +5,7 @@
 
     /* CREDENTIALS */
     const twitch_user_id =        process.env.BOT_ID;
+    const twitch_test_id =        process.env.TEST_ID;
     const twitch_user_name =      process.env.BOT_NAME;
     const twitch_client_id =      process.env.TCLIENT_ID;
     const twitch_client_secret =  process.env.TCLIENT_SECRET;
@@ -20,13 +21,14 @@
 
     /* ENDPOINTS */
     const TWITCH_TOKEN =         'https://id.twitch.tv/oauth2/token';
-    const TWITCH_INFO =          'https://api.twitch.tv/helix/channels';
+    const TWITCH_USER =          'https://api.twitch.tv/helix/users';
+    const TWITCH_FOLLOW =        'https://api.twitch.tv/helix/users/follows';
+    const TWITCH_CHANNEL =       'https://api.twitch.tv/helix/channels';
     const TWITCH_BADGES_GLOBAL = 'https://api.twitch.tv/helix/chat/badges/global';
     const TWITCH_BADGES =        'https://api.twitch.tv/helix/chat/badges';
     const TWITCH_EMOTES_GLOBAL = 'https://api.twitch.tv/helix/chat/emotes/global';
     const TWITCH_EMOTES =        'https://api.twitch.tv/helix/chat/emotes';
     const TWITCH_EMOTES_SET =    'https://api.twitch.tv/helix/chat/emotes/set';
-    const TWITCH_FOLLOW =        'https://api.twitch.tv/helix/users/follows';
     const TWITCH_POLL =          'https://api.twitch.tv/helix/polls';
     const TWITCH_PREDICTIONS =   'https://api.twitch.tv/helix/predictions';
 
@@ -379,23 +381,33 @@
       } else
         onMessageHandler(channel, tags, message, self);
 
-      // commands for mods
+      /* commands for mods */
       if (tags.mod == true || tags.username === twitch_user_name) {
         if (msg === '!next') Promise.all([nextSong(), sleep(1000).then(() => spotifyCurrentTrack())]).then(client.action(channel, `Song has been skipped to next`));
         if (msg === '!prev') Promise.all([prevSong(), sleep(1000).then(() => spotifyCurrentTrack())]).then(client.action(channel, `Song has been skipped to previous`));
         if (msg === '!pause') Promise.all([pauseSong(), sleep(1000).then(() => spotifyCurrentTrack())]);
         if (msg === '!play') Promise.all([playSong(), sleep(1000).then(() => spotifyCurrentTrack())]);
         // if (msg === '!playlist') playlist(client, message, tags, channel, self);
+
+        /* test commands */
+        if (msg === '!info') getStreamInfo(client, message, tags, channel, self).then(res => console.log(res));
+        // if (msg.slice(0, 6) === '!title') changeTitle(client, message, tags, channel, self);
+        if (msg === '!u') getUserInfo(client, message, tags, channel, self).then(res => console.log(res));
+        if (msg === '!gb') getBadgesGlobal(client, message, tags, channel, self).then(res => console.log(res));
+        if (msg === '!cb') getChannelBadges(client, message, tags, channel, self).then(res => console.log(res));
+        if (msg === '!ge') getEmotesGlobal(client, message, tags, channel, self).then(res => console.log(res));
+        if (msg === '!ce') getChannelEmotes(client, message, tags, channel, self).then(res => console.log(res));
+        if (msg === '!es') getChannelEmotesSet(client, message, tags, channel, self).then(res => console.log(res));
       }
 
-      // commands for all
+      /* commands for all */
       if (msg === '!sound') {
         var x = 'Sound commands:';
         $.each(allSound, function(i, n) {
           x += ` #${i}`;
         });
         client.action(channel, x);
-      }
+      };
       if (msg.charAt(0) === '#') {
         let soundCommand = message.substring(1);
         let audio = new Audio(`/sounds/${soundCommand}.wav`);
@@ -403,7 +415,7 @@
         // audio.muted = true;
         audio.volume = 0.1;
         audio.play();
-      }
+      };
       if (msg === '!ping') ping(client, message, tags, channel, self);
       if (msg.slice(0, 4) === '!ban') {
         const ban = {
@@ -414,7 +426,7 @@
         };
         var n = Math.floor(Math.random() * 4) + 1;
         client.action(channel, `${msg.slice(5)} ${ban[n]}`);
-      }
+      };
       if (msg === '!song') song(client, message, tags, channel, self);
       if (msg === 'skip') { // need to validate uniq user message by tags['user-id']
         skip_count++;
@@ -424,65 +436,58 @@
           client.action(channel, `Song has been skipped`);
           return;
         }
-      }
+      };
       if (msg === '!follow') getUserFollowTime(client, message, tags, channel, self);
-
-      // test commands
-      if (msg === '!info') getStreamInfo(client, message, tags, channel, self).then(res => console.log(res));
-      // if (msg.slice(0, 6) === '!title') changeTitle(client, message, tags, channel, self);
-      if (msg === '!global') replaceBadge();
-      if (msg === '!emotes') getChannelEmotes(client, message, tags, channel, self);
-      if (msg === '!set') getChannelEmotesSet(client, message, tags, channel, self);
     })
 
     /* FUNCTIONS */
     function onConnectedHandler(address, port) {
       console.log(`Bot Connected: ${address}:${port}`)
       // client.action(twitch_user_name, "I'm alive! VoHiYo")
-    }
+    };
     function onDisconnectedHandler(reason) {
       console.log(`Bot Disconnected: ${reason}`)
       // client.action(twitch_user_name, "NotLikeThis")
-    }
+    };
     function onHostedHandler (channel, username, viewers, autohost) {
       client.say(channel,
         `Thank you @${username} for the host of ${viewers}!`
       )
-    }
+    };
     function onRaidedHandler(channel, username, viewers) {
       client.say(channel,
         `Thank you @${username} for the raid of ${viewers}!`
       )
-    }
+    };
     function onSubscriptionHandler(channel, username, method, message, tags) {
       client.say(channel,
         `Thank you @${username} for subscribing!`
       )
-    }
+    };
     function onCheerHandler(channel, tags, message)  {
       client.say(channel,
         `Thank you @${tags.username} for the ${tags.bits} bits!`
       )
-    }
+    };
     function onGiftPaidUpgradeHandler(channel, username, sender, tags) {
       client.say(channel,
         `Thank you @${username} for continuing your gifted sub!`
       )
-    }
+    };
     function onHostingHandler(channel, target, viewers) {
       client.say(channel,
         `We are now hosting ${target} with ${viewers} viewers!`
       )
-    }
+    };
     function reconnectHandler() {
       console.log('Reconnecting...')
-    }
+    };
     function resubHandler(channel, username, months, message, tags, methods) {
       const cumulativeMonths = tags['msg-param-cumulative-months']
       client.say(channel,
         `Thank you @${username} for the ${cumulativeMonths} sub!`
       )
-    }
+    };
     function subGiftHandler(channel, username, streakMonths, recipient, methods, tags) {
       client.say(channel,
         `Thank you @${username} for gifting a sub to ${recipient}}.`
@@ -494,7 +499,7 @@
       // client.say(channel,
       //   `${username} has gifted ${senderCount} subs!`
       // )
-    }
+    };
 
     async function onMessageHandler (channel, tags, message, self) {
       if (message.charAt(0) !== prefix) {
@@ -524,13 +529,13 @@
         )
         clearChat();
       }
-    }
+    };
     function clearChat() {
       let msg_limit = $('.chat p').length;
       let msg_first = $('.chat').children(':first');
       if (msg_limit > 5)
         msg_first.remove();
-    }
+    };
     async function replaceEmote() {
       const emotes = await getEmotesGlobal();
       const channelEmotes = await getChannelEmotes();
@@ -574,39 +579,22 @@
         let ping = Math.floor(Math.round(data*1000))
         client.action(channel, `@${tags.username}, your ping is ${ping}ms`)
       });
-    }
+    };
     function song(client, message, tags, channel, self) {
       spotifyCurrentTrack().then(res => typeof res === 'object' ? client.action(channel, `${res.artists.map((_artist) => _artist.name).join(', ')} - ${res.name} 👉 ${res.external_urls.spotify} 👈`) : '');
-    }
-    // function playlist(client, message, tags, channel, self) {
-    //   const getPlaylist = async () => {
-    //     const pl = await spotifyPlaylist();
-    //     if (typeof pl !== 'undefined')
-    //       console.log(pl)
-    //   }
-    //   getPlaylist()
-    // }
-    // async function getUserInfo(client, message, tags, channel, self) {
-    //   const userInfo = async () => {
-    //     let url = `https://api.twitch.tv/helix/users?login=${tags.username}`
-    //     const { access_token } = await getTwitchToken();
-    //     return fetch(url, {
-    //       headers: {
-    //         Authorization: `Bearer ${access_token}`,
-    //         'Client-Id': twitch_client_id,
-    //       },
-    //     }).then((res) => res.json())
-    //   }
-    //   const response = await userInfo();
-    //   const x = response.data[0];
-    //   return x;
-    // }
+    };
+    async function getUserInfo(client, message, tags, channel, self) {
+      let param = $.param({
+        login: tags.username
+      });
+      return await useTwitchToken(TWITCH_USER, param).then(res => res.json()).then(res => res.data[0]);
+    };
     async function getUserFollowTime(client, message, tags, channel, self) {
       let param = $.param({
         to_id: twitch_user_id,
         from_login: tags.username
       });
-      
+
       const x = await useTwitchToken(TWITCH_FOLLOW, param).then(res => res.json()).then(res => res.data[0].followed_at);
       const date = new Date(x.split('T').shift());
       const options = {
@@ -619,99 +607,31 @@
         // second: 'numeric',         // numeric, 2-digit
       }
       client.action(channel, `@${tags.username}, you've been following the channel since [${date.toLocaleDateString('en-UK', options)}]`)
-    }
+    };
     async function getBadgesGlobal(client, message, tags, channel, self) {
-      const channelBadgesGlobal = async () => {
-        let url = `${TWITCH_BADGES_GLOBAL}`;
-        const { access_token } = await getTwitchToken();
-        return fetch(url, {
-          headers: {
-            Authorization: `Bearer ${access_token}`,
-            'Client-Id': twitch_client_id,
-          },
-        }).then((res) => res.json());
-      };
-      const response = await channelBadgesGlobal();
-      const x = response.data
-      // console.log(x);
-      return x;
-    }
+      return await useTwitchToken(TWITCH_BADGES_GLOBAL).then(res => res.json()).then(res => res.data);
+    };
     async function getChannelBadges(client, message, tags, channel, self) {
-      const channelBadges = async () => {
-        let param = $.param({
-          broadcaster_id: twitch_user_id,
-        });
-        let url = `${TWITCH_BADGES}?${param}`;
-        const { access_token } = await getTwitchToken();
-        return fetch(url, {
-          headers: {
-            Authorization: `Bearer ${access_token}`,
-            'Client-Id': twitch_client_id,
-          },
-        }).then((res) => res.json());
-      };
-      const response = await channelBadges();
-      const x = response.data
-      console.log(x);
-    }
+      let param = $.param({
+        // broadcaster_id: twitch_user_id,
+        broadcaster_id: twitch_test_id,
+      });
+      return await useTwitchToken(TWITCH_BADGES, param).then(res => res.json()).then(res => res.data);
+    };
     async function getEmotesGlobal(client, message, tags, channel, self) {
-      const emotesGlobal = async () => {
-        let url = `${TWITCH_EMOTES_GLOBAL}`;
-        const { access_token } = await getTwitchToken();
-        return fetch(url, {
-          headers: {
-            Authorization: `Bearer ${access_token}`,
-            'Client-Id': twitch_client_id,
-          },
-        }).then((res) => res.json());
-      };
-      const response = await emotesGlobal();
-      const x = response.data;
-      // console.log(x);
-      return x;
-    }
+      return await useTwitchToken(TWITCH_EMOTES_GLOBAL).then(res => res.json()).then(res => res.data);
+    };
     async function getChannelEmotes(client, message, tags, channel, self) {
-      const channelEmotes = async () => {
-        let param = $.param({
-          // broadcaster_id: twitch_user_id,
-          broadcaster_id: '31089858', // dreadztv
-          // broadcaster_id: '22484632', // forsen
-        });
-        let url = `${TWITCH_EMOTES}?${param}`;
-        const { access_token } = await getTwitchToken();
-        return fetch(url, {
-          headers: {
-            Authorization: `Bearer ${access_token}`,
-            'Client-Id': twitch_client_id,
-          },
-        }).then((res) => res.json());
-      };
-      const response = await channelEmotes();
-      const x = response.data;
-      // console.log(x);
-      return x;
-    }
+      let param = $.param({
+        // broadcaster_id: twitch_user_id,
+        broadcaster_id: twitch_test_id,
+      });
+      return await useTwitchToken(TWITCH_EMOTES, param).then(res => res.json()).then(res => res.data);
+    };
     async function getChannelEmotesSet(client, message, tags, channel, self) {
-      const channelSet = async () => {
-        // const { emote_set_id } = await getChannelEmotes();
-        const response = await getChannelEmotes();
-        const emote_set_id = response[0].emote_set_id;
-        let param = $.param({
-          emote_set_id: emote_set_id,
-        });
-        let url = `${TWITCH_EMOTES_SET}?${param}`;
-        const { access_token } = await getTwitchToken();
-        return fetch(url, {
-          headers: {
-            Authorization: `Bearer ${access_token}`,
-            'Client-Id': twitch_client_id,
-          },
-        }).then((res) => res.json());
-      };
-      const response = await channelSet();
-      const x = response.data
-      console.log(x);
-    }
+      return await getChannelEmotes().then(res => res[0].emote_set_id);
+      /* func to emotes set */
+    };
     // async function createPoll(client, message, tags, channel, self) {
     //   const poll = async () => {
     //     let data = {
@@ -737,7 +657,7 @@
     //   const response = await poll();
     //   const x = response.data;
     //   console.log(x);
-    // }
+    // };
     // async function createPrediction(client, message, tags, channel, self) {
     //   const predictions = async () => {
     //     let data = {
@@ -763,14 +683,14 @@
     //   const response = await predictions();
     //   const x = response.data;
     //   console.log(x);
-    // }
+    // };
     async function getStreamInfo(client, message, tags, channel, self) {
       let param = $.param({
         broadcaster_id: twitch_user_id,
       });
 
-      return useTwitchToken(TWITCH_INFO, param).then(res => res.json()).then(res => res.data[0]);
-    }
+      return useTwitchToken(TWITCH_CHANNEL, param).then(res => res.json()).then(res => res.data[0]);
+    };
     // async function changeTitle(client, message, tags, channel, self) {
     //   const newTitle = async () => {
     //     const title = message.slice(7);
@@ -783,7 +703,7 @@
     //     let param = $.param({
     //       broadcaster_id: twitch_user_id,
     //     });
-    //     let url = `${TWITCH_INFO}?${param}`;
+    //     let url = `${TWITCH_CHANNEL}?${param}`;
     //     const { access_token } = await getTwitchToken();
     //     return fetch(url, {
     //       method: 'PATCH',
@@ -799,7 +719,7 @@
     //   const response = await newTitle();
     //   const x = response;
     //   console.log(x);
-    // }
+    // };
 
     /*
         if you want whispers messages from bot to user:
