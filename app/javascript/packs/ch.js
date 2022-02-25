@@ -4,8 +4,8 @@
     const Buffer = require('buffer/').Buffer
 
     /* CREDENTIALS */
-    const twitch_user_id =        process.env.BOT_ID;
     const twitch_test_id =        process.env.TEST_ID;
+    const twitch_user_id =        process.env.BOT_ID;
     const twitch_user_name =      process.env.BOT_NAME;
     const twitch_client_id =      process.env.TCLIENT_ID;
     const twitch_client_secret =  process.env.TCLIENT_SECRET;
@@ -226,8 +226,14 @@
     //   }
     // };
 
+    function check_states() {
+      getPlaybackState().then(res => res.json()).then(res => {
+        res.shuffle_state === true ? $('#btn-shuffle').addClass('on') : $('#btn-shuffle').removeClass('on');
+        res.repeat_state === 'off' ? $('#btn-repeat').removeClass('on') : $('#btn-repeat').addClass('on');
+      });
+    };
     $('#btn-info').click(() =>
-      spotifyCurrentTrack().then(console.log(`Loading Spotify Data...`)));
+      spotifyCurrentTrack().then(console.log(`Loading Spotify Data...`)).then(check_states()));
     $('#btn-next, #btn-forward').click(() =>
       Promise.all([nextSong(), sleep(500).then(() => spotifyCurrentTrack())]));
     $('#btn-previous').click(() =>
@@ -236,36 +242,18 @@
       Promise.all([pauseSong(), sleep(500).then(() => spotifyCurrentTrack())]));
     $('#btn-play').click(() =>
       Promise.all([playSong(), sleep(500).then(() => spotifyCurrentTrack())]));
-    $('#btn-shuffle').click(() =>
+    $('#btn-shuffle').click(() => {
       getPlaybackState()
         .then(res => res.json())
-        .then(res => res.shuffle_state === false ? shuffleSong(true).then($('#btn-shuffle').css('border-bottom', '1px solid')) : shuffleSong(false).then($('#btn-shuffle').removeAttr('style')))
-        // .then(res => {
-        //   if (res.shuffle_state === false) {
-        //     shuffleSong(true);
-        //     $('#btn-shuffle').css('border-bottom', '1px solid');
-        //   } else {
-        //     shuffleSong(false);
-        //     $('#btn-shuffle').removeAttr('style');
-        //   }
-        // })
-    );
-    $('#btn-repeat').click(() =>
+        .then(res => res.shuffle_state === false ? shuffleSong(true).then($('#btn-shuffle').addClass('on')) : shuffleSong(false).then($('#btn-shuffle').removeClass('on')))
+    });
+    $('#btn-repeat').click(() => {
       getPlaybackState()
         .then(res => res.json())
-        .then(res => res.repeat_state === 'off' ? repeatSong('track').then($('#btn-repeat').css('border-bottom', '1px solid')) : repeatSong('off').then($('#btn-repeat').removeAttr('style')))
-        // .then(res => {
-        //   if (res.repeat_state === 'off') {
-        //     repeatSong('track');
-        //     $('#btn-repeat').css('border-bottom', '1px solid');
-        //   } else {
-        //     repeatSong('off');
-        //     $('#btn-repeat').removeAttr('style');
-        //   }
-        // })
-    );
+        .then(res => res.repeat_state === 'off' ? repeatSong('track').then($('#btn-repeat').addClass('on')) : repeatSong('off').then($('#btn-repeat').removeClass('on')))
+    });
     setInterval(() =>
-      getNowPlaying().then(res => res.status === 200 ? spotifyCurrentTrack() : ''), 15000);
+      getPlaybackState().then(res => res.status === 200 ? (spotifyCurrentTrack(), check_states()) : ''), 15000);
     console.log('Spotify API');
 
     /* BOT CONNECTION */
@@ -295,7 +283,7 @@
         response: (user) =>
           `@${user} rolls [ ${Math.floor(Math.random() * 100) + 1} ]`
       },
-      github: { response: process.env.GITHUB }
+      github: { response: process.env.GITHUB },
     }
 
     const allSound = {
@@ -629,8 +617,8 @@
       return await useTwitchToken(TWITCH_EMOTES, param).then(res => res.json()).then(res => res.data);
     };
     async function getChannelEmotesSet(client, message, tags, channel, self) {
-      return await getChannelEmotes().then(res => res[0].emote_set_id);
-      /* func to emotes set */
+      return client.emotesets;
+      // return await getChannelEmotes().then(res => res[0].emote_set_id);
     };
     // async function createPoll(client, message, tags, channel, self) {
     //   const poll = async () => {
