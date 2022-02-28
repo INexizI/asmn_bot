@@ -84,6 +84,10 @@ body {
     background-color: #181818;
     cursor: pointer;
   }
+  .btn-ctrl > button {
+    width: 45px;
+    height: 40px;
+  }
   #btn-info, #btn-next {
     border: 1px solid;
     border-radius: 20px;

@@ -34,7 +34,6 @@
 
     const TOKEN_ENDPOINT =       'https://accounts.spotify.com/api/token';
     const PLAYBACK_STATE =       'https://api.spotify.com/v1/me/player';                    // get
-    const NOW_PLAYING =          'https://api.spotify.com/v1/me/player/currently-playing';  // get
     const PREVIOUS_SONG =        'https://api.spotify.com/v1/me/player/previous';           // post
     const NEXT_SONG =            'https://api.spotify.com/v1/me/player/next';               // post
     const PAUSE_SONG =           'https://api.spotify.com/v1/me/player/pause';              // put
@@ -96,14 +95,6 @@
       });
 
       return await response.json();
-    };
-    const getNowPlaying = async () => {
-      const { access_token } = await getAccessToken();
-      return fetch(NOW_PLAYING, {
-        headers: {
-          Authorization: `Bearer ${access_token}`,
-        },
-      });
     };
     const getPlaybackState = async () => {
       const { access_token } = await getAccessToken();
@@ -176,7 +167,7 @@
       });
     };
     const spotifyCurrentTrack = async () => {
-      const response = await getNowPlaying();
+      const response = await getPlaybackState();
       // console.log(`response status: ${response.status}`)
       if (response.status === 204 || response.status > 400) {
         console.log(`Spotify offline`);
@@ -228,32 +219,52 @@
 
     function check_states() {
       getPlaybackState().then(res => res.json()).then(res => {
+        res.is_playing === true ? $('#btn-p img').attr('src', '/images/pause.svg') : $('#btn-p img').attr('src', '/images/play.svg');
         res.shuffle_state === true ? $('#btn-shuffle').addClass('on') : $('#btn-shuffle').removeClass('on');
-        res.repeat_state === 'off' ? $('#btn-repeat').removeClass('on') : $('#btn-repeat').addClass('on');
-      });
+        res.repeat_state === 'track' ? $('#btn-repeat').addClass('on') : $('#btn-repeat').removeClass('on');
+      }).then(spotifyCurrentTrack());
     };
     $('#btn-info').click(() =>
       spotifyCurrentTrack().then(console.log(`Loading Spotify Data...`)).then(check_states()));
     $('#btn-next, #btn-forward').click(() =>
-      Promise.all([nextSong(), sleep(500).then(() => spotifyCurrentTrack())]));
+      nextSong().then(sleep(500).then(() => spotifyCurrentTrack())));
     $('#btn-previous').click(() =>
-      Promise.all([prevSong(), sleep(500).then(() => spotifyCurrentTrack())]));
-    $('#btn-pause').click(() =>
-      Promise.all([pauseSong(), sleep(500).then(() => spotifyCurrentTrack())]));
-    $('#btn-play').click(() =>
-      Promise.all([playSong(), sleep(500).then(() => spotifyCurrentTrack())]));
+      prevSong().then(sleep(500).then(() => spotifyCurrentTrack())));
+    $('#btn-p').click(() => {
+      getPlaybackState().then(res => res.json()).then(res => {
+        if (res.is_playing === true) {
+          pauseSong();
+          $('#btn-p img').attr('src', '/images/play.svg');
+        } else {
+          playSong();
+          $('#btn-p img').attr('src', '/images/pause.svg');
+        }
+      });
+    });
     $('#btn-shuffle').click(() => {
-      getPlaybackState()
-        .then(res => res.json())
-        .then(res => res.shuffle_state === false ? shuffleSong(true).then($('#btn-shuffle').addClass('on')) : shuffleSong(false).then($('#btn-shuffle').removeClass('on')))
+      getPlaybackState().then(res => res.json()).then(res => {
+        if (res.shuffle_state === true) {
+          shuffleSong(false);
+          $('#btn-shuffle').removeClass('on');
+        } else {
+          shuffleSong(true);
+          $('#btn-shuffle').addClass('on');
+        }
+      });
     });
     $('#btn-repeat').click(() => {
-      getPlaybackState()
-        .then(res => res.json())
-        .then(res => res.repeat_state === 'off' ? repeatSong('track').then($('#btn-repeat').addClass('on')) : repeatSong('off').then($('#btn-repeat').removeClass('on')))
+      getPlaybackState().then(res => res.json()).then(res => {
+        if (res.repeat_state === 'track') {
+          repeatSong('off');
+          $('#btn-repeat').removeClass('on');
+        } else {
+          repeatSong('track');
+          $('#btn-repeat').addClass('on');
+        }
+      });
     });
     setInterval(() =>
-      getPlaybackState().then(res => res.status === 200 ? (spotifyCurrentTrack(), check_states()) : ''), 15000);
+      getPlaybackState().then(res => res.status === 200 ? check_states() : ''), 15000);
     console.log('Spotify API');
 
     /* BOT CONNECTION */
