@@ -104,14 +104,6 @@
         },
       });
     };
-    // const getCurrentPlaylist = async () => {
-    //   const { access_token } = await getAccessToken();
-    //   return fetch(PLAYLIST_ENDPOINT, {
-    //     headers: {
-    //       Authorization: `Bearer ${access_token}`,
-    //     },
-    //   });
-    // };
     const shuffleSong = async (param) => {
       const { access_token } = await getAccessToken();
       return fetch(`${SHUFFLE_SONG}?state=${param}`, {
@@ -166,6 +158,23 @@
         },
       });
     };
+    const volumeSong = async (param) => {
+      const { access_token } = await getAccessToken();
+      return fetch(`${VOLUME}?volume_percent=${param}`, {
+        method: 'PUT',
+        headers: {
+          Authorization: `Bearer ${access_token}`,
+        },
+      });
+    };
+    // const getRecentlyPlayed = async () => {
+    //   const { access_token } = await getAccessToken();
+    //   return fetch(`${RECENTLY_PLAY}?limit=5`, {
+    //     headers: {
+    //       Authorization: `Bearer ${access_token}`,
+    //     },
+    //   });
+    // };
     const spotifyCurrentTrack = async () => {
       const response = await getPlaybackState();
       // console.log(`response status: ${response.status}`)
@@ -216,6 +225,14 @@
     //     return x
     //   }
     // };
+    // const getCurrentPlaylist = async () => {
+    //   const { access_token } = await getAccessToken();
+    //   return fetch(PLAYLIST_ENDPOINT, {
+    //     headers: {
+    //       Authorization: `Bearer ${access_token}`,
+    //     },
+    //   });
+    // };
 
     function check_states() {
       getPlaybackState().then(res => res.json()).then(res => {
@@ -263,6 +280,8 @@
         }
       });
     });
+    $('#btn-mute').click(() =>
+      getPlaybackState().then(res => res.json()).then(res => res.device.volume_percent === 0 ? volumeSong(40) : volumeSong(0)));
     setInterval(() =>
       getPlaybackState().then(res => res.status === 200 ? check_states() : ''), 15000);
     console.log('Spotify API');
@@ -294,7 +313,9 @@
         response: (user) =>
           `@${user} rolls [ ${Math.floor(Math.random() * 100) + 1} ]`
       },
-      github: { response: process.env.GITHUB },
+      github: {
+        response: process.env.GITHUB
+      },
     }
 
     const allSound = {
@@ -382,11 +403,13 @@
 
       /* commands for mods */
       if (tags.mod == true || tags.username === twitch_user_name) {
-        if (msg === '!next') Promise.all([nextSong(), sleep(1000).then(() => spotifyCurrentTrack())]).then(client.action(channel, `Song has been skipped to next`));
-        if (msg === '!prev') Promise.all([prevSong(), sleep(1000).then(() => spotifyCurrentTrack())]).then(client.action(channel, `Song has been skipped to previous`));
-        if (msg === '!pause') Promise.all([pauseSong(), sleep(1000).then(() => spotifyCurrentTrack())]);
-        if (msg === '!play') Promise.all([playSong(), sleep(1000).then(() => spotifyCurrentTrack())]);
+        if (msg === '!next') nextSong(), sleep(500).then(() => spotifyCurrentTrack());
+        if (msg === '!prev') prevSong(), sleep(500).then(() => spotifyCurrentTrack());
+        if (msg === '!pause') pauseSong(), $('#btn-p img').attr('src', '/images/play.svg'), sleep(500).then(() => spotifyCurrentTrack());
+        if (msg === '!play') playSong(), $('#btn-p img').attr('src', '/images/pause.svg'), sleep(500).then(() => spotifyCurrentTrack());
         // if (msg === '!playlist') playlist(client, message, tags, channel, self);
+        if (msg.slice(0, 4) === '!vol') volumeSong(parseInt(msg.slice(5)));
+        if (msg === '!mute') volumeSong(0);
 
         /* test commands */
         if (msg === '!info') getStreamInfo(client, message, tags, channel, self).then(res => console.log(res));
