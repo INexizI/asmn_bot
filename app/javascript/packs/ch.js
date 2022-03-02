@@ -354,37 +354,37 @@
     /* EVENTS */
     client.on('connected', (address, port) => {
         onConnectedHandler(address, port)
-    })
+    });
     client.on('disconnected', (reason) => {
       onDisconnectedHandler(reason)
-    })
+    });
     client.on('hosted', (channel, username, viewers, autohost) => {
       onHostedHandler(channel, username, viewers, autohost)
-    })
+    });
     client.on('subscription', (channel, username, method, message, tags) => {
       onSubscriptionHandler(channel, username, method, message, tags)
-    })
+    });
     client.on('raided', (channel, username, viewers) => {
       onRaidedHandler(channel, username, viewers)
-    })
+    });
     client.on('cheer', (channel, tags, message) => {
       onCheerHandler(channel, tags, message)
-    })
+    });
     client.on('giftpaidupgrade', (channel, username, sender, tags) => {
       onGiftPaidUpgradeHandler(channel, username, sender, tags)
-    })
+    });
     client.on('hosting', (channel, target, viewers) => {
       onHostingHandler(channel, target, viewers)
-    })
+    });
     client.on('reconnect', () => {
       reconnectHandler()
-    })
+    });
     client.on('resub', (channel, username, months, message, tags, methods) => {
       resubHandler(channel, username, months, message, tags, methods)
-    })
+    });
     client.on('subgift', (channel, username, streakMonths, recipient, methods, tags) => {
       subGiftHandler(channel, username, streakMonths, recipient, methods, tags)
-    })
+    });
 
     client.on('chat', (channel, tags, message, self) => {
       if (self) return;
@@ -420,6 +420,11 @@
         if (msg === '!ge') getEmotesGlobal(client, message, tags, channel, self).then(res => console.log(res));
         if (msg === '!ce') getChannelEmotes(client, message, tags, channel, self).then(res => console.log(res));
         if (msg === '!es') getChannelEmotesSet(client, message, tags, channel, self).then(res => console.log(res));
+        if (msg === '!i') {
+          getUserInfo(client, message, tags, channel, self).then(res => console.log(res))
+          getStreamInfo(client, message, tags, channel, self).then(res => console.log(res))
+          console.log(client)
+        }
       }
 
       /* commands for all */
@@ -460,7 +465,7 @@
         }
       };
       if (msg === '!follow') getUserFollowTime(client, message, tags, channel, self);
-    })
+    });
 
     /* FUNCTIONS */
     function onConnectedHandler(address, port) {
@@ -527,26 +532,39 @@
       if (message.charAt(0) !== prefix) {
         // console.log(tags);
 
-        const b = await replaceBadge();
-        let badge = '';
-        $.each(Object.keys(tags.badges), function(i, n) {
-          const result = b.find( ({ name }) => name === n );
-          badge += `<img src=${result.link} id="ch-badge">`;
-        });
+        const { profile_image_url } = await getUserInfo(client, message, tags, channel, self);
 
-        const e = await replaceEmote();
-        let m = [];
-        $.each(message.split(' '), function(i, n) {
-          const result = e.find( ({ name }) => name === n );
-          typeof result == 'object' ? m.push(`<img src=${result.link} id="ch-emote">`) : m.push(n);
-          message = m.join(' ');
-        });
+        const b = await replaceBadge(tags.badges);
+        // const b = await replaceBadge();
+        // let badge = '';
+        // $.each(Object.keys(tags.badges), function(i, n) {
+        //   const result = b.find( ({ name }) => name === n );
+        //   badge += `<img src=${result.link} id="ch-badge">`;
+        // });
 
+        const e = await replaceEmote(message);
+        // const e = await replaceEmote();
+        // let m = [];
+        // $.each(message.split(' '), function(i, n) {
+        //   const result = e.find( ({ name }) => name === n );
+        //   typeof result == 'object' ? m.push(`<img src=${result.link} id="ch-emote">`) : m.push(n);
+        //   message = m.join(' ');
+        // });
+
+        // $('.chat').append(
+        //   `<p>
+        //     <span id="ch-block">${badge}</span>
+        //     <span><img src=${profile_image_url}></span>
+        //     <span style="color: ${tags.color}" id="ch-user">${tags['display-name']}: </span>
+        //     <span id="ch-msg">${message}</span>
+        //   </p>`
+        // )
         $('.chat').append(
           `<p>
-            <span id="ch-block">${badge}</span>
+            <span id="ch-block">${b}</span>
+            <span><img src=${profile_image_url} id="ch-user-pic"></span>
             <span style="color: ${tags.color}" id="ch-user">${tags['display-name']}: </span>
-            <span id="ch-msg">${message}</span>
+            <span id="ch-msg">${e}</span>
           </p>`
         )
         clearChat();
@@ -558,22 +576,7 @@
       if (msg_limit > 5)
         msg_first.remove();
     };
-    async function replaceEmote() {
-      const emotes = await getEmotesGlobal();
-      const channelEmotes = await getChannelEmotes();
-      let x = emotes.concat(channelEmotes);
-      let y = [];
-      $.each(x, function(i, n) {
-        y.push({
-          id: n.id,
-          name: n.name,
-          link: `https://static-cdn.jtvnw.net/emoticons/v2/${n.id}/${iconConfig.format}/${iconConfig.theme}/${iconConfig.scale}`
-        });
-      });
-      // console.log(y);
-      return y;
-    };
-    async function replaceBadge() {
+    async function replaceBadge(b) {
       const badges = await getBadgesGlobal();
       let x = [];
       $.each(badges, function(i, n) {
@@ -592,7 +595,37 @@
             // console.log(`${n.set_id}_${n.versions[k].id}: ${n.versions[k].image_url_1x}`);
       });
       // console.log(x);
-      return x;
+      // return x;
+
+      let badge = '';
+      $.each(Object.keys(b), function(i, n) {
+        const result = x.find( ({ name }) => name === n );
+        badge += `<img src=${result.link} id="ch-badge">`;
+      });
+      return badge;
+    };
+    async function replaceEmote(e) {
+      const emotes = await getEmotesGlobal();
+      const channelEmotes = await getChannelEmotes();
+      let x = emotes.concat(channelEmotes);
+      let y = [];
+      $.each(x, function(i, n) {
+        y.push({
+          id: n.id,
+          name: n.name,
+          link: `https://static-cdn.jtvnw.net/emoticons/v2/${n.id}/${iconConfig.format}/${iconConfig.theme}/${iconConfig.scale}`
+        });
+      });
+      // console.log(y);
+      // return y;
+
+      let m = [];
+      $.each(e.split(' '), function(i, n) {
+        const result = y.find( ({ name }) => name === n );
+        typeof result == 'object' ? m.push(`<img src=${result.link} id="ch-emote">`) : m.push(n);
+        return e = m.join(' ');
+      });
+      return e;
     };
 
     /* COMMANDS */
