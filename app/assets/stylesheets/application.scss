@@ -19,6 +19,7 @@ body {
   background-attachment: fixed;
 }
 
+::-webkit-scrollbar,
 .profiler-results,
 .profiler-left,
 .profiler-top,
@@ -106,6 +107,7 @@ body {
 .chat {
   width: 500px;
   font-size: 20px;
+  overflow-y: scroll;
   p {
     border-radius: 5px;
     padding: 10px;
@@ -119,7 +121,7 @@ body {
   #ch-badge {
     width: inherit;
     height: inherit;
-    padding-left: 3px;
+    padding-right: 5px;
   }
   #ch-user {
     font-weight: 700;
@@ -136,5 +138,6 @@ body {
   #ch-msg {
     color: #efefef;
     font-weight: 400;
+    overflow-wrap: break-word;
   }
 }

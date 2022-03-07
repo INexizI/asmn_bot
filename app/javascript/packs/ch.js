@@ -533,32 +533,10 @@
         // console.log(tags);
 
         const { profile_image_url } = await getUserInfo(client, message, tags, channel, self);
-
         const b = await replaceBadge(tags.badges);
-        // const b = await replaceBadge();
-        // let badge = '';
-        // $.each(Object.keys(tags.badges), function(i, n) {
-        //   const result = b.find( ({ name }) => name === n );
-        //   badge += `<img src=${result.link} id="ch-badge">`;
-        // });
-
         const e = await replaceEmote(message);
-        // const e = await replaceEmote();
-        // let m = [];
-        // $.each(message.split(' '), function(i, n) {
-        //   const result = e.find( ({ name }) => name === n );
-        //   typeof result == 'object' ? m.push(`<img src=${result.link} id="ch-emote">`) : m.push(n);
-        //   message = m.join(' ');
-        // });
 
-        // $('.chat').append(
-        //   `<p>
-        //     <span id="ch-block">${badge}</span>
-        //     <span><img src=${profile_image_url}></span>
-        //     <span style="color: ${tags.color}" id="ch-user">${tags['display-name']}: </span>
-        //     <span id="ch-msg">${message}</span>
-        //   </p>`
-        // )
+        // $('.chat').append(`<p><span id="ch-block">${badge}</span><span><img src=${profile_image_url}></span><span style="color: ${tags.color}" id="ch-user">${tags['display-name']}: </span><span id="ch-msg">${message}</span></p>`);
         $('.chat').append(
           `<p>
             <span id="ch-block">${b}</span>
@@ -566,9 +544,11 @@
             <span style="color: ${tags.color}" id="ch-user">${tags['display-name']}: </span>
             <span id="ch-msg">${e}</span>
           </p>`
-        )
+        );
         clearChat();
-      }
+      };
+
+      $('.chat').animate({scrollTop: document.body.scrollHeight}, 1000);
     };
     function clearChat() {
       let msg_limit = $('.chat p').length;
