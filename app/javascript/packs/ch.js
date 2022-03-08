@@ -421,9 +421,9 @@
         if (msg === '!ce') getChannelEmotes(client, message, tags, channel, self).then(res => console.log(res));
         if (msg === '!es') getChannelEmotesSet(client, message, tags, channel, self).then(res => console.log(res));
         if (msg === '!i') {
-          getUserInfo(client, message, tags, channel, self).then(res => console.log(res))
-          getStreamInfo(client, message, tags, channel, self).then(res => console.log(res))
-          console.log(client)
+          getUserInfo(client, message, tags, channel, self).then(res => console.log(res));
+          getStreamInfo(client, message, tags, channel, self).then(res => console.log(res));
+          console.log(client);
         }
       }
 
@@ -530,28 +530,27 @@
 
     async function onMessageHandler (channel, tags, message, self) {
       if (message.charAt(0) !== prefix) {
-        // console.log(tags);
-
         const { profile_image_url } = await getUserInfo(client, message, tags, channel, self);
         const b = await replaceBadge(tags.badges);
         const e = await replaceEmote(message);
 
-        // $('.chat').append(`<p><span id="ch-block">${badge}</span><span><img src=${profile_image_url}></span><span style="color: ${tags.color}" id="ch-user">${tags['display-name']}: </span><span id="ch-msg">${message}</span></p>`);
-        $('.chat').append(
-          `<p>
-            <span id="ch-block">${b}</span>
-            <span><img src=${profile_image_url} id="ch-user-pic"></span>
-            <span style="color: ${tags.color}" id="ch-user">${tags['display-name']}: </span>
+        $('.chat').append(`
+          <div id="ch-block">
+            <span id="ch-badge">${b}</span>
+            <p>
+              <span><img src=${profile_image_url} id="ch-user-pic"></span>
+              <span style="color: ${tags.color}" id="ch-user">${tags['display-name']}: </span>
+            </p>
             <span id="ch-msg">${e}</span>
-          </p>`
-        );
+          </div>
+        `);
         clearChat();
       };
 
       $('.chat').animate({scrollTop: document.body.scrollHeight}, 1000);
     };
     function clearChat() {
-      let msg_limit = $('.chat p').length;
+      let msg_limit = $('.chat div').length;
       let msg_first = $('.chat').children(':first');
       if (msg_limit > 5)
         msg_first.remove();
@@ -565,17 +564,13 @@
             name: n.set_id,
             link: n.versions[0].image_url_1x,
           });
-          // console.log(`${n.set_id}: ${n.versions[0].image_url_1x}`);
         else if (n.versions.length > 1)
           for (let k = 0; k < n.versions.length; k++)
             x.push({
               name: `${n.set_id}_${n.versions[k].id}`,
               link: n.versions[0].image_url_1x,
             });
-            // console.log(`${n.set_id}_${n.versions[k].id}: ${n.versions[k].image_url_1x}`);
       });
-      // console.log(x);
-      // return x;
 
       let badge = '';
       $.each(Object.keys(b), function(i, n) {
@@ -596,8 +591,6 @@
           link: `https://static-cdn.jtvnw.net/emoticons/v2/${n.id}/${iconConfig.format}/${iconConfig.theme}/${iconConfig.scale}`
         });
       });
-      // console.log(y);
-      // return y;
 
       let m = [];
       $.each(e.split(' '), function(i, n) {
@@ -622,6 +615,7 @@
       let param = $.param({
         login: tags.username
       });
+
       return await useTwitchToken(TWITCH_USER, param).then(res => res.json()).then(res => res.data[0]);
     };
     async function getUserFollowTime(client, message, tags, channel, self) {
@@ -651,6 +645,7 @@
         // broadcaster_id: twitch_user_id,
         broadcaster_id: twitch_test_id,
       });
+
       return await useTwitchToken(TWITCH_BADGES, param).then(res => res.json()).then(res => res.data);
     };
     async function getEmotesGlobal(client, message, tags, channel, self) {
@@ -661,6 +656,7 @@
         // broadcaster_id: twitch_user_id,
         broadcaster_id: twitch_test_id,
       });
+
       return await useTwitchToken(TWITCH_EMOTES, param).then(res => res.json()).then(res => res.data);
     };
     async function getChannelEmotesSet(client, message, tags, channel, self) {
