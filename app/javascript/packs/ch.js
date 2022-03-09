@@ -424,6 +424,9 @@
           getUserInfo(client, message, tags, channel, self).then(res => console.log(res));
           getStreamInfo(client, message, tags, channel, self).then(res => console.log(res));
           console.log(client);
+        };
+        if (msg === '!time') {
+          getTimeFollow(client, message, tags, channel, self).then(res => console.log(res))
         }
       }
 
@@ -751,6 +754,32 @@
     //   const x = response;
     //   console.log(x);
     // };
+    async function getTimeFollow(client, message, tags, channel, self) {
+      let param = $.param({
+        to_id: twitch_user_id,
+        from_login: tags.username
+      });
+
+      let t = await useTwitchToken(TWITCH_FOLLOW, param).then(res => res.json()).then(res => res.data[0].followed_at);
+      let n = new Date().getTime();
+      let f = (n - Date.parse(t));
+      let year, month, day, hour, minute, second;
+
+      second = Math.floor(f / 1000);
+      minute = Math.floor(second / 60);
+      second = second % 60;
+      hour = Math.floor(minute / 60);
+      minute = minute % 60;
+      day = Math.floor(hour / 24);
+      hour = hour % 24;
+      month = Math.floor(day / 30);
+      day = day % 30;
+      year = Math.floor(month / 12);
+      month = month % 12;
+
+      var q = `${year}y ${month}m ${day}d ${hour}h ${minute}m ${second}s after followed!`;
+      return q;
+    };
 
     /*
         if you want whispers messages from bot to user:
