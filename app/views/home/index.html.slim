@@ -31,6 +31,10 @@ title Bot
     button#btn-mute
       img src='/images/volume-x.svg'
 
+.time
+  h1
+    span data-controller="followtime" data-followtime-message-value="Current Time: ${hour}:${minute}:${second}"
+
   / .info
     / = link_to '', target: '_blank', rel: 'noopener noreferrer', title: 'GitHub' do
     img src='/images/github.svg'

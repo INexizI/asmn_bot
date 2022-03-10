@@ -16,6 +16,7 @@
     "buffer": "^6.0.3",
     "jquery": "^3.6.0",
     "query-string": "^7.1.1",
+    "stimulus": "^3.0.1",
     "tmi.js": "^1.8.5",
     "turbolinks": "^5.2.0",
     "webpack": "^5.69.1",
