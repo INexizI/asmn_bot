@@ -35,6 +35,10 @@ title Bot
   h1
     span data-controller="followtime" data-followtime-message-value="Current Time: ${hour}:${minute}:${second}"
 
+.login
+  = link_to login_path do
+    p Login
+
   / .info
     / = link_to '', target: '_blank', rel: 'noopener noreferrer', title: 'GitHub' do
     img src='/images/github.svg'
