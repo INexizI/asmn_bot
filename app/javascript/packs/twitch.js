@@ -4,15 +4,19 @@
     const Buffer = require('buffer/').Buffer
 
     /* CREDENTIALS */
-    const twitch_user_id =        process.env.BOT_ID;
-    const twitch_user_name =      process.env.BOT_NAME;
-    const twitch_client_id =      process.env.TCLIENT_ID;
-    const twitch_client_secret =  process.env.TCLIENT_SECRET;
-    const spotify_client_id =     process.env.SCLIENT_ID;
-    const spotify_client_secret = process.env.SCLIENT_SECRET;
-    const spotify_refresh_token = process.env.SREFRESH_TOKEN;
+    const twitch_user_id =            process.env.BOT_ID;
+    const twitch_user_name =          process.env.BOT_NAME;
+    const twitch_client_id =          process.env.TCLIENT_ID;
+    const twitch_client_secret =      process.env.TCLIENT_SECRET;
+    const spotify_client_id =         process.env.SCLIENT_ID;
+    const spotify_client_secret =     process.env.SCLIENT_SECRET;
+    const spotify_refresh_token =     process.env.SREFRESH_TOKEN;
+    const spotify_client_id_alt =     process.env.SCLIENT_ID_ALT;
+    const spotify_client_secret_alt = process.env.SCLIENT_SECRET_ALT;
+    const spotify_refresh_token_alt = process.env.SREFRESH_TOKEN_ALT;
 
-    const basic = Buffer.from(`${spotify_client_id}:${spotify_client_secret}`).toString('base64');
+    // const basic = Buffer.from(`${spotify_client_id}:${spotify_client_secret}`).toString('base64');
+    const basic = Buffer.from(`${spotify_client_id_alt}:${spotify_client_secret_alt}`).toString('base64');
     const sleep = ms => new Promise(res => setTimeout(() => res(), ms));
     const regexpCommand = new RegExp(/^!([a-zA-Z0-9]+)(?:\W+)?(.*)?/);
     const prefix = '#';
@@ -256,6 +260,10 @@
     setInterval(() =>
       getPlaybackState().then(res => res.status === 200 ? check_states() : ''), 15000);
     console.log('Spotify API');
+
+    $('#pl').click(async () => {
+      console.log('LOG');
+    });
 
     /* BOT CONNECTION */
     const config = {
