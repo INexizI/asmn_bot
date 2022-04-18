@@ -1,18 +1,16 @@
 title Bot
 
 .img
-  img src='/images/q.jpg' alt=''
-
-  // twitch chat
-  / iframe id="chat" src="https://www.twitch.tv/embed/a_s_m_n/chat?parent=localhost" frameborder="0"
+  / img src='/images/q.jpg' alt=''
   .chat
+  iframe id="chat" src="https://www.twitch.tv/embed/a_s_m_n/chat?parent=localhost" frameborder="0"
 
-.song
+/ .song
   p#sp-albumImg
   p#sp-title
   p#sp-artist
 
-.btn
+/ .btn
   button#btn-info Update Info
   button#btn-next Next
   br
@@ -31,15 +29,15 @@ title Bot
     button#btn-mute
       img src='/images/volume-x.svg'
 
-.time
+/ .time
   h1
     span data-controller="followtime" data-followtime-message-value="Current Time: ${hour}:${minute}:${second}"
 
-.login
+/ .login
   = link_to login_path do
     p Login
 
-.pl
+/ .pl
   button#pl LOG
 
   / .info

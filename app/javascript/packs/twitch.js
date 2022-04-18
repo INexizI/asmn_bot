@@ -257,8 +257,8 @@
     });
     $('#btn-mute').click(() =>
       getPlaybackState().then(res => res.json()).then(res => res.device.volume_percent === 0 ? volumeSong(40) : volumeSong(0)));
-    setInterval(() =>
-      getPlaybackState().then(res => res.status === 200 ? check_states() : ''), 15000);
+    // setInterval(() =>
+    //   getPlaybackState().then(res => res.status === 200 ? check_states() : ''), 15000);
     console.log('Spotify API');
 
     $('#pl').click(async () => {
@@ -464,9 +464,12 @@
     };
 
     async function onMessageHandler (channel, tags, message, self) {
-      if (message.charAt(0) !== prefix) {
-        const { profile_image_url } = await getUserInfo(client, message, tags, channel, self);
-        const b = await replaceBadge(tags.badges);
+      const { profile_image_url } = await getUserInfo(client, message, tags, channel, self);
+      const b = await replaceBadge(tags.badges);
+      
+      if ((message.charAt(0) !== prefix) && (message.slice(0, 4) !== 'http')) {
+        // const { profile_image_url } = await getUserInfo(client, message, tags, channel, self);
+        // const b = await replaceBadge(tags.badges);
         const e = await replaceEmote(message);
 
         $('.chat').append(`
@@ -480,6 +483,26 @@
           </div>
         `);
         clearChat();
+      };
+
+      if ((message.slice(12, 19) == 'youtube') || (message.slice(8, 16) == 'youtu.be')) {
+        $.get(message, data => {
+          let id = $(data).find('meta[itemprop=videoId]').attr('content');
+          let title = $(data).find('meta[itemprop=name]').attr('content');
+          // let i = `https://img.youtube.com/vi/${id}/0.jpg`;
+          let img = `https://i.ytimg.com/vi/${id}/maxresdefault.jpg`;
+          $('.chat').append(`
+            <div id="ch-block">
+              <span id="ch-badge">${b}</span>
+              <p>
+                <span><img src=${profile_image_url} id="ch-user-pic"></span>
+                <span style="color: ${tags.color}" id="ch-user">${tags['display-name']}: </span>
+              </p>
+              <span id="ch-msg">${`<a href="${message}"><img src="${img}" id="ch-ythumb" title="${title}"></a>`}</span>
+            </div>
+          `);
+          clearChat();
+        });
       };
 
       $('.chat').animate({scrollTop: document.body.scrollHeight}, 1000);

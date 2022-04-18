@@ -31,6 +31,7 @@ body {
   // height: 100vh;
   height: 500px;
   margin: 0 auto;
+  justify-content: center;
   #chat, img {
     width: 500px;
     height: 500px;
@@ -108,7 +109,7 @@ body {
   width: 500px;
   font-size: 20px;
   overflow-y: scroll;
-  
+
   #ch-block {
     border-radius: 5px;
     padding: 10px;
@@ -127,6 +128,11 @@ body {
         height: 18px;
         padding: 0 3px;
       }
+    }
+    #ch-ythumb {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
     }
   }
   #ch-user {
