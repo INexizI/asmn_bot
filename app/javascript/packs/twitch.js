@@ -15,8 +15,8 @@
     const spotify_client_secret_alt = process.env.SCLIENT_SECRET_ALT;
     const spotify_refresh_token_alt = process.env.SREFRESH_TOKEN_ALT;
 
-    // const basic = Buffer.from(`${spotify_client_id}:${spotify_client_secret}`).toString('base64');
-    const basic = Buffer.from(`${spotify_client_id_alt}:${spotify_client_secret_alt}`).toString('base64');
+    const basic = Buffer.from(`${spotify_client_id}:${spotify_client_secret}`).toString('base64');
+    // const basic = Buffer.from(`${spotify_client_id_alt}:${spotify_client_secret_alt}`).toString('base64');
     const sleep = ms => new Promise(res => setTimeout(() => res(), ms));
     const regexpCommand = new RegExp(/^!([a-zA-Z0-9]+)(?:\W+)?(.*)?/);
     const prefix = '#';
@@ -466,7 +466,7 @@
     async function onMessageHandler (channel, tags, message, self) {
       const { profile_image_url } = await getUserInfo(client, message, tags, channel, self);
       const b = await replaceBadge(tags.badges);
-      
+
       if ((message.charAt(0) !== prefix) && (message.slice(0, 4) !== 'http')) {
         // const { profile_image_url } = await getUserInfo(client, message, tags, channel, self);
         // const b = await replaceBadge(tags.badges);

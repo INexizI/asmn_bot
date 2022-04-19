@@ -10,11 +10,14 @@
     "@rails/activestorage": "^7.0.2",
     "@rails/ujs": "^7.0.2",
     "@rails/webpacker": "5.4.3",
+    "ansi-regex": "4.1.1",
     "babel": "^6.23.0",
     "babel-core": "^6.26.3",
     "babel-loader": "^8.2.4",
     "buffer": "^6.0.3",
+    "glob-parent": "5.1.2",
     "jquery": "^3.6.0",
+    "nth-check": "2.0.1",
     "query-string": "^7.1.1",
     "stimulus": "^3.0.1",
     "tmi.js": "^1.8.5",
@@ -26,6 +29,7 @@
     "@babel/core": "^7.17.9",
     "@babel/plugin-transform-runtime": "^7.17.0",
     "@babel/preset-env": "^7.16.11",
-    "webpack-dev-server": "^4"
+    "webpack-dev-server": "^4",
+    "yarn-upgrade-all": "^0.7.1"
   }
 }
