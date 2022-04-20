@@ -11,7 +11,6 @@ import "controllers"
 
 import tmi from "tmi.js"
 
-// require('packs/ch')
 require('packs/twitch')
 
 Rails.start()

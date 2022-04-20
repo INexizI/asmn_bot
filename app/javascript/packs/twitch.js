@@ -351,8 +351,12 @@
           client.action(channel, response(tags.username));
         else if (typeof response === 'string')
           client.action(channel, response);
-      } else
+      } else if ((msg.indexOf('<') > -1) && (msg !== '<3'))
+        client.say(channel, `/delete ${tags['id']}`); // client.say(channel, `/ban ${tags.username} F`);
+      else if ((msg.charAt(0) !== prefix) && (msg.slice(0, 4) !== 'http'))
         onMessageHandler(channel, tags, message, self);
+      else if ((msg.slice(12, 19) == 'youtube') || (msg.slice(8, 16) == 'youtu.be'))
+        onLinkHandler(channel, tags, message, self);
 
       /* commands for mods */
       if (tags.mod == true || tags.username === twitch_user_name) {
@@ -463,14 +467,35 @@
       // )
     };
 
-    async function onMessageHandler (channel, tags, message, self) {
+    async function onMessageHandler(channel, tags, message, self) {
+      const { profile_image_url } = await getUserInfo(client, message, tags, channel, self);
+      const b = await replaceBadge(tags.badges);
+      const e = await replaceEmote(message);
+
+      $('.chat').append(`
+        <div id="ch-block">
+          <span id="ch-badge">${b}</span>
+          <p>
+            <span><img src=${profile_image_url} id="ch-user-pic"></span>
+            <span style="color: ${tags.color}" id="ch-user">${tags['display-name']}: </span>
+          </p>
+          <span id="ch-msg">${e}</span>
+        </div>
+      `);
+      clearChat();
+
+      $('.chat').animate({scrollTop: document.body.scrollHeight}, 1000);
+    };
+    async function onLinkHandler(channel, tags, message, self) {
       const { profile_image_url } = await getUserInfo(client, message, tags, channel, self);
       const b = await replaceBadge(tags.badges);
 
-      if ((message.charAt(0) !== prefix) && (message.slice(0, 4) !== 'http')) {
-        // const { profile_image_url } = await getUserInfo(client, message, tags, channel, self);
-        // const b = await replaceBadge(tags.badges);
-        const e = await replaceEmote(message);
+      $.get(message, data => {
+        let id = $(data).find('meta[itemprop=videoId]').attr('content');
+        let title = $(data).find('meta[itemprop=name]').attr('content');
+        // let i = `https://img.youtube.com/vi/${id}/0.jpg`;
+        let img = `https://i.ytimg.com/vi/${id}/maxresdefault.jpg`;
+        console.log(message);
 
         $('.chat').append(`
           <div id="ch-block">
@@ -479,34 +504,15 @@
               <span><img src=${profile_image_url} id="ch-user-pic"></span>
               <span style="color: ${tags.color}" id="ch-user">${tags['display-name']}: </span>
             </p>
-            <span id="ch-msg">${e}</span>
+            <span id="ch-msg">${`<a href="${message}"><img src="${img}" id="ch-ythumb" title="${title}"></a>`}</span>
           </div>
         `);
         clearChat();
-      };
 
-      if ((message.slice(12, 19) == 'youtube') || (message.slice(8, 16) == 'youtu.be')) {
-        $.get(message, data => {
-          let id = $(data).find('meta[itemprop=videoId]').attr('content');
-          let title = $(data).find('meta[itemprop=name]').attr('content');
-          // let i = `https://img.youtube.com/vi/${id}/0.jpg`;
-          let img = `https://i.ytimg.com/vi/${id}/maxresdefault.jpg`;
-          $('.chat').append(`
-            <div id="ch-block">
-              <span id="ch-badge">${b}</span>
-              <p>
-                <span><img src=${profile_image_url} id="ch-user-pic"></span>
-                <span style="color: ${tags.color}" id="ch-user">${tags['display-name']}: </span>
-              </p>
-              <span id="ch-msg">${`<a href="${message}"><img src="${img}" id="ch-ythumb" title="${title}"></a>`}</span>
-            </div>
-          `);
-          clearChat();
-        });
-      };
-
-      $('.chat').animate({scrollTop: document.body.scrollHeight}, 1000);
+        $('.chat').animate({scrollTop: document.body.scrollHeight}, 1000);
+      });
     };
+
     function clearChat() {
       let msg_limit = $('.chat div').length;
       let msg_first = $('.chat').children(':first');
