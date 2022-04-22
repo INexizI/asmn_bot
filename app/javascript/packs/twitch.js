@@ -351,9 +351,9 @@
           client.action(channel, response(tags.username));
         else if (typeof response === 'string')
           client.action(channel, response);
-      } else if ((msg.indexOf('<') > -1) && (msg !== '<3'))
-        client.say(channel, `/delete ${tags['id']}`); // client.say(channel, `/ban ${tags.username} F`);
-      else if ((msg.charAt(0) !== prefix) && (msg.slice(0, 4) !== 'http'))
+      // } else if ((msg.indexOf('<') > -1) && (msg !== '<3'))
+      //   client.say(channel, `/delete ${tags['id']}`); // client.say(channel, `/ban ${tags.username} F`);
+      } else if ((msg.charAt(0) !== prefix) && (msg.slice(0, 4) !== 'http'))
         onMessageHandler(channel, tags, message, self);
       else if ((msg.slice(12, 19) == 'youtube') || (msg.slice(8, 16) == 'youtu.be'))
         onLinkHandler(channel, tags, message, self);
@@ -468,9 +468,11 @@
     };
 
     async function onMessageHandler(channel, tags, message, self) {
+      const r = message.replace(/(\<\/?\w+\ ?>)/g, '\*');
+
       const { profile_image_url } = await getUserInfo(client, message, tags, channel, self);
       const b = await replaceBadge(tags.badges);
-      const e = await replaceEmote(message);
+      const e = await replaceEmote(r);
 
       $('.chat').append(`
         <div id="ch-block">
@@ -495,7 +497,6 @@
         let title = $(data).find('meta[itemprop=name]').attr('content');
         // let i = `https://img.youtube.com/vi/${id}/0.jpg`;
         let img = `https://i.ytimg.com/vi/${id}/maxresdefault.jpg`;
-        console.log(message);
 
         $('.chat').append(`
           <div id="ch-block">
