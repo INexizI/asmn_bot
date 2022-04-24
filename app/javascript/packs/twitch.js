@@ -21,6 +21,8 @@
     const regexpCommand = new RegExp(/^!([a-zA-Z0-9]+)(?:\W+)?(.*)?/);
     const prefix = '#';
     let skip_count = 0;
+    let getAllEmotes; // array of all emotes
+    let getAllBadges; // array of all badges
 
     /* ENDPOINTS */
     const TWITCH_TOKEN =         'https://id.twitch.tv/oauth2/token';
@@ -261,10 +263,6 @@
     //   getPlaybackState().then(res => res.status === 200 ? check_states() : ''), 15000);
     console.log('Spotify API');
 
-    $('#pl').click(async () => {
-      console.log('LOG');
-    });
-
     /* BOT CONNECTION */
     const config = {
       options: { debug: true },
@@ -470,15 +468,17 @@
     async function onMessageHandler(channel, tags, message, self) {
       const r = message.replace(/(\<\/?\w+\ ?>)/g, '\*');
 
+      /* FIXME: high latency on callback/return user profile picture
       const { profile_image_url } = await getUserInfo(client, message, tags, channel, self);
-      const b = await replaceBadge(tags.badges);
-      const e = await replaceEmote(r);
+      <span><img src=${profile_image_url} id="ch-user-pic"></span> */
+
+      const b = replaceBadge(tags.badges);
+      const e = replaceEmote(r);
 
       $('.chat').append(`
         <div id="ch-block">
           <span id="ch-badge">${b}</span>
           <p>
-            <span><img src=${profile_image_url} id="ch-user-pic"></span>
             <span style="color: ${tags.color}" id="ch-user">${tags['display-name']}: </span>
           </p>
           <span id="ch-msg">${e}</span>
@@ -520,46 +520,18 @@
       if (msg_limit > 5)
         msg_first.remove();
     };
-    async function replaceBadge(b) {
-      const badges = await getBadgesGlobal();
-      let x = [];
-      $.each(badges, function(i, n) {
-        if (n.versions.length == 1)
-          x.push({
-            name: n.set_id,
-            link: n.versions[0].image_url_1x,
-          });
-        else if (n.versions.length > 1)
-          for (let k = 0; k < n.versions.length; k++)
-            x.push({
-              name: `${n.set_id}_${n.versions[k].id}`,
-              link: n.versions[0].image_url_1x,
-            });
-      });
-
+    function replaceBadge(b) {
       let badge = '';
       $.each(Object.keys(b), function(i, n) {
-        const result = x.find( ({ name }) => name === n );
+        const result = getAllBadges.find( ({ name }) => name === n );
         badge += `<img src=${result.link} id="ch-badge">`;
       });
       return badge;
     };
-    async function replaceEmote(e) {
-      const emotes = await getEmotesGlobal();
-      const channelEmotes = await getChannelEmotes();
-      let x = emotes.concat(channelEmotes);
-      let y = [];
-      $.each(x, function(i, n) {
-        y.push({
-          id: n.id,
-          name: n.name,
-          link: `https://static-cdn.jtvnw.net/emoticons/v2/${n.id}/${iconConfig.format}/${iconConfig.theme}/${iconConfig.scale}`
-        });
-      });
-
+    function replaceEmote(e) {
       let m = [];
       $.each(e.split(' '), function(i, n) {
-        const result = y.find( ({ name }) => name === n );
+        const result = getAllEmotes.find( ({ name }) => name === n );
         typeof result == 'object' ? m.push(`<img src=${result.link} id="ch-emote">`) : m.push(n);
         return e = m.join(' ');
       });
@@ -658,5 +630,34 @@
       var q = `${year}y ${month}m ${day}d ${hour}h ${minute}m ${second}s after followed!`;
       return q;
     };
+
+    useTwitchToken(TWITCH_EMOTES_GLOBAL).then(res => res.json()).then(res => {
+      let x = [];
+      $.each(res.data, function(i, n) {
+        x.push({
+          id: n.id,
+          name: n.name,
+          link: `https://static-cdn.jtvnw.net/emoticons/v2/${n.id}/${iconConfig.format}/${iconConfig.theme}/${iconConfig.scale}`
+        });
+      });
+      getAllEmotes = x;
+    });
+    useTwitchToken(TWITCH_BADGES_GLOBAL).then(res => res.json()).then(res => {
+      let x = [];
+      $.each(res.data, function(i, n) {
+        if (n.versions.length == 1)
+          x.push({
+            name: n.set_id,
+            link: n.versions[0].image_url_1x,
+          });
+        else if (n.versions.length > 1)
+          for (let k = 0; k < n.versions.length; k++)
+            x.push({
+              name: `${n.set_id}_${n.versions[k].id}`,
+              link: n.versions[0].image_url_1x,
+            });
+      });
+      getAllBadges = x;
+    });
   });
 }).call(this);
