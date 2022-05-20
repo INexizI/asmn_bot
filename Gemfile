@@ -31,7 +31,7 @@ gem 'dotenv-rails'
 # Reduces boot times through caching; required in config/boot.rb
 gem 'bootsnap', '>= 1.4.4', require: false
 
-gem 'nokogiri', '~> 1.13', '>= 1.13.4'
+gem 'nokogiri', '~> 1.13'
 
 group :development, :test do
   # Call 'byebug' anywhere in the code to stop execution and get a debugger console
