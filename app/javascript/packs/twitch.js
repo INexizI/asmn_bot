@@ -21,6 +21,7 @@
     const regexpCommand = new RegExp(/^!([a-zA-Z0-9]+)(?:\W+)?(.*)?/);
     const prefix = '#';
     let skip_count = 0;
+    let announceCount = 0;
     let getAllEmotes; // array of all emotes
     let getAllBadges; // array of all badges
 
@@ -259,8 +260,8 @@
     });
     $('#btn-mute').click(() =>
       getPlaybackState().then(res => res.json()).then(res => res.device.volume_percent === 0 ? volumeSong(40) : volumeSong(0)));
-    // setInterval(() =>
-    //   getPlaybackState().then(res => res.status === 200 ? check_states() : ''), 15000);
+    setInterval(() =>
+      getPlaybackState().then(res => res.status === 200 ? check_states() : ''), 15000);
     console.log('Spotify API');
 
     /* BOT CONNECTION */
@@ -382,7 +383,8 @@
         audio.volume = 0.1;
         audio.play();
       };
-      if (msg === '!ping') ping(client, message, tags, channel, self);
+      // if (msg === '!ping') ping(client, message, tags, channel, self);
+      if (msg === '!ping') ping(client, tags, channel);
       if (msg.slice(0, 4) === '!ban') {
         const ban = {
           1: 'Is permanently banned from this channel',
@@ -410,10 +412,12 @@
       //   client.ban(channel, 'asd');
       //   client.action(channel, `asd has been banned!`);
       // }
-      
+
       // announce case
       // if (msg === '!qwe')
       //   client.say(channel, '/announce asd!');
+      setInterval(() =>
+        announceMessage(client, channel), 30000);
     });
 
     /* FUNCTIONS */
@@ -548,8 +552,20 @@
       return e;
     };
 
+    async function announceMessage(client, channel) {
+      let announceList = [
+        { 1: 'qwe!' },
+        { 2: 'asd!' },
+        { 3: 'zxc!' }
+      ];
+
+      client.say(channel, `/announce ${announceCount}`);
+      announceCount != announceList.length ? announceCount++ : announceCount = 0;
+    };
+
     /* COMMANDS */
-    function ping(client, message, tags, channel, self) {
+    // function ping(client, message, tags, channel, self) {
+    function ping(client, tags, channel) {
       client.ping().then(data => {
         let ping = Math.floor(Math.round(data*1000))
         client.action(channel, `@${tags.username}, your ping is ${ping}ms`)
