@@ -306,7 +306,7 @@
 
     /* EVENTS */
     client.on('connected', (address, port) => {
-        onConnectedHandler(address, port)
+        onConnectedHandler(address, port);
     });
     client.on('disconnected', (reason) => {
       onDisconnectedHandler(reason)
@@ -365,6 +365,9 @@
         if (msg === '!play') playSong(), $('#btn-p img').attr('src', '/images/pause.svg'), sleep(500).then(() => spotifyCurrentTrack());
         if (msg.slice(0, 4) === '!vol') volumeSong(parseInt(msg.slice(5)));
         if (msg === '!mute') volumeSong(0);
+        if (msg === '!announce')
+          setInterval(() =>
+            announceMessage(client, channel), 30000);
       }
 
       /* commands for all */
@@ -416,13 +419,11 @@
       // announce case
       // if (msg === '!qwe')
       //   client.say(channel, '/announce asd!');
-      setInterval(() =>
-        announceMessage(client, channel), 30000);
     });
 
     /* FUNCTIONS */
     function onConnectedHandler(address, port) {
-      console.log(`Bot Connected: ${address}:${port}`)
+      console.log(`Bot Connected: ${address}:${port}`);
     };
     function onDisconnectedHandler(reason) {
       console.log(`Bot Disconnected: ${reason}`)
@@ -552,15 +553,17 @@
       return e;
     };
 
-    async function announceMessage(client, channel) {
+    function announceMessage(client, channel) {
       let announceList = [
-        { 1: 'qwe!' },
-        { 2: 'asd!' },
-        { 3: 'zxc!' }
+        { text: 'qwe!' },
+        { text: 'asd!' },
+        { text: 'zxc!' }
       ];
-
-      client.say(channel, `/announce ${announceCount}`);
-      announceCount != announceList.length ? announceCount++ : announceCount = 0;
+      if (announceCount != announceList.length) {
+        client.say(channel, `/announce ${announceList[announceCount].text}`);
+        announceCount++;
+      } else
+        announceCount = 0;
     };
 
     /* COMMANDS */
