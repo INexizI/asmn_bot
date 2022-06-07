@@ -306,7 +306,7 @@
 
     /* EVENTS */
     client.on('connected', (address, port) => {
-        onConnectedHandler(address, port);
+      onConnectedHandler(address, port);
     });
     client.on('disconnected', (reason) => {
       onDisconnectedHandler(reason)
@@ -352,10 +352,11 @@
           client.action(channel, response);
       // } else if ((msg.indexOf('<') > -1) && (msg !== '<3'))
       //   client.say(channel, `/delete ${tags['id']}`); // client.say(channel, `/ban ${tags.username} F`);
-      } else if ((msg.charAt(0) !== prefix) && (msg.slice(0, 4) !== 'http'))
-        onMessageHandler(channel, tags, message, self);
-      else if ((msg.slice(12, 19) == 'youtube') || (msg.slice(8, 16) == 'youtu.be'))
+      } else if ((msg.slice(12, 19) == 'youtube') || (msg.slice(8, 16) == 'youtu.be'))
         onLinkHandler(channel, tags, message, self);
+      else if ((msg.charAt(0) !== prefix) && (msg.slice(0, 4) !== 'http'))
+        // TODO(D): create ban words/symbols/list(?)
+        msg.charAt(0) === 'q' ? client.deletemessage(channel, tags.id) : onMessageHandler(channel, tags, message, self);
 
       /* commands for mods */
       if (tags.mod == true || tags.username === twitch_user_name) {
@@ -414,6 +415,11 @@
       // if (msg === '!qwe') {
       //   client.ban(channel, 'asd');
       //   client.action(channel, `asd has been banned!`);
+      // }
+
+      // delete case
+      // if (msg.charAt(0) === 'q') {
+      //   client.deletemessage(channel, tags.id)
       // }
 
       // announce case
