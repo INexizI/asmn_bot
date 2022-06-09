@@ -22,8 +22,14 @@
     const prefix = '#';
     let skip_count = 0;
     let announceCount = 0;
-    let getAllEmotes; // array of all emotes
-    let getAllBadges; // array of all badges
+    // array of all:
+    let getAllEmotes;   // emotes
+    let getAllBadges;   // badges
+    let banWords = [
+      { name: 'qwe', reason: 'qwe'},
+      { name: 'asd', reason: 'asd'},
+      { name: 'zxc', reason: 'zxc'}
+    ];  // ban-words
 
     /* ENDPOINTS */
     const TWITCH_TOKEN =         'https://id.twitch.tv/oauth2/token';
@@ -357,7 +363,6 @@
       else if ((msg.charAt(0) !== prefix) && (msg.slice(0, 4) !== 'http'))
         // TODO(D): create ban words/symbols/list(?)
         msg.charAt(0) === 'q' ? client.deletemessage(channel, tags.id) : onMessageHandler(channel, tags, message, self);
-
       /* commands for mods */
       if (tags.mod == true || tags.username === twitch_user_name) {
         if (msg === '!next') nextSong(), sleep(500).then(() => spotifyCurrentTrack());
@@ -413,7 +418,7 @@
 
       // ban case
       // if (msg === '!qwe') {
-      //   client.ban(channel, 'asd');
+      //   client.ban(channel, 'asd', 'qwe'); // first: nickname, second: reason
       //   client.action(channel, `asd has been banned!`);
       // }
 
@@ -489,22 +494,23 @@
     async function onMessageHandler(channel, tags, message, self) {
       const r = message.replace(/(\<\/?\w+\ ?>)/g, '\*');
 
-      /* FIXME: high latency on callback/return user profile picture
+      /* FIXME(D): high latency on callback/return user profile picture
       const { profile_image_url } = await getUserInfo(client, message, tags, channel, self);
       <span><img src=${profile_image_url} id="ch-user-pic"></span> */
 
       const b = replaceBadge(tags.badges);
       const e = replaceEmote(r);
 
-      $('.chat').append(`
-        <div id="ch-block">
-          <span id="ch-badge">${b}</span>
-          <p>
-            <span style="color: ${tags.color}" id="ch-user">${tags['display-name']}: </span>
-          </p>
-          <span id="ch-msg">${e}</span>
-        </div>
-      `);
+      if (e != '')
+        $('.chat').append(`
+          <div id="ch-block">
+            <span id="ch-badge">${b}</span>
+            <p>
+              <span style="color: ${tags.color}" id="ch-user">${tags['display-name']}: </span>
+            </p>
+            <span id="ch-msg">${e}</span>
+          </div>
+        `);
       clearChat();
 
       $('.chat').animate({scrollTop: document.body.scrollHeight}, 1000);
@@ -535,12 +541,6 @@
       });
     };
 
-    function clearChat() {
-      let msg_limit = $('.chat div').length;
-      let msg_first = $('.chat').children(':first');
-      if (msg_limit > 5)
-        msg_first.remove();
-    };
     function replaceBadge(b) {
       let badge = '';
       $.each(Object.keys(b), function(i, n) {
@@ -549,14 +549,33 @@
       });
       return badge;
     };
+    // function replaceEmote(e) {
+    //   let m = [];
+    //   $.each(e.split(' '), function(i, n) {
+    //     const result = getAllEmotes.find(({ name }) => name === n);
+    //     typeof result == 'object' ? m.push(`<img src=${result.link} id="ch-emote">`) : m.push(n);
+    //   };
+    //   return e = m.join(' ');
+    // };
     function replaceEmote(e) {
       let m = [];
       $.each(e.split(' '), function(i, n) {
-        const result = getAllEmotes.find( ({ name }) => name === n );
-        typeof result == 'object' ? m.push(`<img src=${result.link} id="ch-emote">`) : m.push(n);
-        return e = m.join(' ');
+        const checkBan = banWords.find(({ name }) => name === n);
+        const checkEmote = getAllEmotes.find(({ name }) => name === n);
+        if (checkBan)
+          console.log(`<message deleted: ${n} (${checkBan.reason})>`);
+        else if (checkEmote)
+          m.push(`<img src=${checkEmote.link} id="ch-emote">`);
+        else
+          m.push(n);
       });
-      return e;
+      return e = m.join(' ');
+    };
+    function clearChat() {
+      let msg_limit = $('.chat div').length;
+      let msg_first = $('.chat').children(':first');
+      if (msg_limit > 5)
+        msg_first.remove();
     };
 
     function announceMessage(client, channel) {
