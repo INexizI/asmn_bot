@@ -349,6 +349,7 @@
       if (self) return;
       let msg = message.toLowerCase();
 
+      // TODO(D): create extended|strict check for onMessageHandler
       if (msg.charAt(0) === '!') {
         const [raw, command, argument] = message.match(regexpCommand);
         const { response } = commands[command] || {};
@@ -361,8 +362,8 @@
       } else if ((msg.slice(12, 19) == 'youtube') || (msg.slice(8, 16) == 'youtu.be'))
         onLinkHandler(channel, tags, message, self);
       else if ((msg.charAt(0) !== prefix) && (msg.slice(0, 4) !== 'http'))
-        // TODO(D): create ban words/symbols/list(?)
-        msg.charAt(0) === 'q' ? client.deletemessage(channel, tags.id) : onMessageHandler(channel, tags, message, self);
+        banWords.find(({name}) => name === msg) ? client.deletemessage(channel, tags.id) : onMessageHandler(channel, tags, message, self);
+
       /* commands for mods */
       if (tags.mod == true || tags.username === twitch_user_name) {
         if (msg === '!next') nextSong(), sleep(500).then(() => spotifyCurrentTrack());
@@ -501,16 +502,15 @@
       const b = replaceBadge(tags.badges);
       const e = replaceEmote(r);
 
-      if (e != '')
-        $('.chat').append(`
-          <div id="ch-block">
-            <span id="ch-badge">${b}</span>
-            <p>
-              <span style="color: ${tags.color}" id="ch-user">${tags['display-name']}: </span>
-            </p>
-            <span id="ch-msg">${e}</span>
-          </div>
-        `);
+      $('.chat').append(`
+        <div id="ch-block">
+          <span id="ch-badge">${b}</span>
+          <p>
+            <span style="color: ${tags.color}" id="ch-user">${tags['display-name']}: </span>
+          </p>
+          <span id="ch-msg">${e}</span>
+        </div>
+      `);
       clearChat();
 
       $('.chat').animate({scrollTop: document.body.scrollHeight}, 1000);
@@ -549,25 +549,11 @@
       });
       return badge;
     };
-    // function replaceEmote(e) {
-    //   let m = [];
-    //   $.each(e.split(' '), function(i, n) {
-    //     const result = getAllEmotes.find(({ name }) => name === n);
-    //     typeof result == 'object' ? m.push(`<img src=${result.link} id="ch-emote">`) : m.push(n);
-    //   };
-    //   return e = m.join(' ');
-    // };
     function replaceEmote(e) {
       let m = [];
       $.each(e.split(' '), function(i, n) {
-        const checkBan = banWords.find(({ name }) => name === n);
-        const checkEmote = getAllEmotes.find(({ name }) => name === n);
-        if (checkBan)
-          console.log(`<message deleted: ${n} (${checkBan.reason})>`);
-        else if (checkEmote)
-          m.push(`<img src=${checkEmote.link} id="ch-emote">`);
-        else
-          m.push(n);
+        const result = getAllEmotes.find(({ name }) => name === n);
+        (result) ? m.push(`<img src=${result.link} id="ch-emote">`) : m.push(n);
       });
       return e = m.join(' ');
     };
