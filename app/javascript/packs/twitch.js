@@ -295,7 +295,11 @@
       },
       roll: {
         response: (user) =>
-          `@${user} rolls [ ${Math.floor(Math.random() * 100) + 1} ]`
+          `@${user} roll: [ ${Math.floor(Math.random() * 100) + 1} ]`
+      },
+      dice: {
+        response: (user) =>
+          `@${user} dice: [ ${Math.floor(Math.random() * 6) + 1} ]`
       },
       github: {
         response: process.env.GITHUB
@@ -350,87 +354,125 @@
       let msg = message.toLowerCase();
 
       // TODO(D): create extended|strict check for onMessageHandler
-      if (msg.charAt(0) === '!') {
-        const [raw, command, argument] = message.match(regexpCommand);
-        const { response } = commands[command] || {};
-        if (typeof response === 'function')
-          client.action(channel, response(tags.username));
-        else if (typeof response === 'string')
-          client.action(channel, response);
-      // } else if ((msg.indexOf('<') > -1) && (msg !== '<3'))
-      //   client.say(channel, `/delete ${tags['id']}`); // client.say(channel, `/ban ${tags.username} F`);
-      } else if ((msg.slice(12, 19) == 'youtube') || (msg.slice(8, 16) == 'youtu.be'))
-        onLinkHandler(channel, tags, message, self);
-      else if ((msg.charAt(0) !== prefix) && (msg.slice(0, 4) !== 'http'))
-        banWords.find(({name}) => name === msg) ? client.deletemessage(channel, tags.id) : onMessageHandler(channel, tags, message, self);
+      // if (msg.charAt(0) === '!') {
+      //   const [raw, command, argument] = message.match(regexpCommand);
+      //   const { response } = commands[command] || {};
+      //   typeof response === 'function' ? client.action(channel, response(tags.username)) : client.action(channel, response);
+      // } else if ((msg.slice(12, 19) == 'youtube') || (msg.slice(8, 16) == 'youtu.be') || (msg.slice(8, 13) === 'imgur'))
+      //   onLinkHandler(channel, tags, message, self);
+      // else if ((msg.charAt(0) !== prefix) && (msg.slice(0, 4) !== 'http'))
+      //   banWords.find(({name}) => name === msg) ? client.deletemessage(channel, tags.id) : onMessageHandler(channel, tags, message, self);
 
-      /* commands for mods */
-      if (tags.mod == true || tags.username === twitch_user_name) {
-        if (msg === '!next') nextSong(), sleep(500).then(() => spotifyCurrentTrack());
-        if (msg === '!prev') prevSong(), sleep(500).then(() => spotifyCurrentTrack());
-        if (msg === '!pause') pauseSong(), $('#btn-p img').attr('src', '/images/play.svg'), sleep(500).then(() => spotifyCurrentTrack());
-        if (msg === '!play') playSong(), $('#btn-p img').attr('src', '/images/pause.svg'), sleep(500).then(() => spotifyCurrentTrack());
-        if (msg.slice(0, 4) === '!vol') volumeSong(parseInt(msg.slice(5)));
-        if (msg === '!mute') volumeSong(0);
-        if (msg === '!announce')
-          setInterval(() =>
-            announceMessage(client, channel), 30000);
+      const [raw, command, argument] = message.match(regexpCommand);
+
+      /* switch/case caommands */
+      switch (command) {
+        case 'next':
+          nextSong(), sleep(500).then(() => spotifyCurrentTrack())
+          break
+        case 'prev':
+          prevSong(), sleep(500).then(() => spotifyCurrentTrack())
+          break
+        case 'pause':
+          pauseSong(), $('#btn-p img').attr('src', '/images/play.svg'), sleep(500).then(() => spotifyCurrentTrack())
+          break
+        case 'play':
+          playSong(), $('#btn-p img').attr('src', '/images/pause.svg'), sleep(500).then(() => spotifyCurrentTrack())
+          break
+        case 'mute':
+          volumeSong(0)
+          break
+        case 'announce':
+          setInterval(() => announceMessage(client, channel), 30000);
+          break
+        case 'vol':
+          volumeSong(parseInt(argument));
+          break
+        case 'follow':
+          getUserFollowTime(client, tags, channel);
+          break
+        case 'sound':
+          let x = 'Sound commands:';
+          $.each(allSound, function(i, n) {
+            x += ` #${i}`;
+          });
+          client.action(channel, x);
+          break
+        case 'ping':
+          ping(client, tags, channel);
+          break
+        case 'song':
+          song(client, channel);
+          break
+        case 'skip':
+          if (skip_count == 3) {
+            skip_count = 0;
+            nextSong();
+            client.action(channel, `Song has been skipped`);
+            return
+          } else
+            skip_count++
+          break
       }
 
-      /* commands for all */
-      if (msg === '!sound') {
-        var x = 'Sound commands:';
-        $.each(allSound, function(i, n) {
-          x += ` #${i}`;
-        });
-        client.action(channel, x);
-      };
-      if (msg.charAt(0) === '#') {
-        let soundCommand = message.substring(1);
-        let audio = new Audio(`/sounds/${soundCommand}.wav`);
-        // audio.autoplay = true;
-        // audio.muted = true;
-        audio.volume = 0.1;
-        audio.play();
-      };
-      // if (msg === '!ping') ping(client, message, tags, channel, self);
-      if (msg === '!ping') ping(client, tags, channel);
-      if (msg.slice(0, 4) === '!ban') {
-        const ban = {
-          1: 'Is permanently banned from this channel',
-          2: 'var 2',
-          3: 'var 3',
-          4: 'var 4'
-        };
-        var n = Math.floor(Math.random() * 4) + 1;
-        client.action(channel, `${msg.slice(5)} ${ban[n]}`);
-      };
-      if (msg === '!song') song(client, message, tags, channel, self);
-      if (msg === 'skip') { // need to validate uniq user message by tags['user-id']
-        skip_count++;
-        if (skip_count == 3) {
-          skip_count = 0;
-          nextSong();
-          client.action(channel, `Song has been skipped`);
-          return;
-        }
-      };
-      if (msg === '!follow') getUserFollowTime(client, message, tags, channel, self);
+      // /* commands for mods */
+      // if (tags.mod == true || tags.username === twitch_user_name) {
+      //   if (msg === '!next') nextSong(), sleep(500).then(() => spotifyCurrentTrack());
+      //   if (msg === '!prev') prevSong(), sleep(500).then(() => spotifyCurrentTrack());
+      //   if (msg === '!pause') pauseSong(), $('#btn-p img').attr('src', '/images/play.svg'), sleep(500).then(() => spotifyCurrentTrack());
+      //   if (msg === '!play') playSong(), $('#btn-p img').attr('src', '/images/pause.svg'), sleep(500).then(() => spotifyCurrentTrack());
+      //   if (msg.slice(0, 4) === '!vol') volumeSong(parseInt(msg.slice(5)));
+      //   if (msg === '!mute') volumeSong(0);
+      //   if (msg === '!announce')
+      //     setInterval(() =>
+      //       announceMessage(client, channel), 30000);
+      // };
+      //
+      // /* commands for all */
+      // if (msg === '!sound') {
+      //   var x = 'Sound commands:';
+      //   $.each(allSound, function(i, n) {
+      //     x += ` #${i}`;
+      //   });
+      //   client.action(channel, x);
+      // };
+      // if (msg.charAt(0) === prefix) {
+      //   let soundCommand = message.substring(1);
+      //   let audio = new Audio(`/sounds/${soundCommand}.wav`);
+      //   // audio.autoplay = true;
+      //   // audio.muted = true;
+      //   audio.volume = 0.1;
+      //   audio.play();
+      // };
+      // if (msg === '!ping') ping(client, tags, channel);
+      // if (msg.slice(0, 4) === '!ban') {
+      //   const ban = {
+      //     1: 'Is permanently banned from this channel',
+      //     2: 'var 2',
+      //     3: 'var 3',
+      //     4: 'var 4'
+      //   };
+      //   var n = Math.floor(Math.random() * 4) + 1;
+      //   client.action(channel, `${msg.slice(5)} ${ban[n]}`);
+      // };
+      // if (msg === '!song') song(client, channel);
+      // if (msg === 'skip') { // need to validate uniq user message by tags['user-id']
+      //   skip_count++;
+      //   if (skip_count == 3) {
+      //     skip_count = 0;
+      //     nextSong();
+      //     client.action(channel, `Song has been skipped`);
+      //     return;
+      //   }
+      // };
+      // if (msg === '!follow') getUserFollowTime(client, tags, channel);
 
       // ban case
-      // if (msg === '!qwe') {
-      //   client.ban(channel, 'asd', 'qwe'); // first: nickname, second: reason
-      //   client.action(channel, `asd has been banned!`);
-      // }
-
+      // if (msg === '!qwe') client.ban(channel, 'asd', 'qwe'), client.action(channel, `asd has been banned!`) // first: nickname, second: reason
       // delete case
-      // if (msg.charAt(0) === 'q') {
-      //   client.deletemessage(channel, tags.id)
-      // }
-
+      // if (msg.charAt(0) === 'q') client.deletemessage(channel, tags.id)
       // announce case
-      // if (msg === '!qwe')
-      //   client.say(channel, '/announce asd!');
+      // if (msg === '!qwe') client.say(channel, '/announce asd!');
     });
 
     /* FUNCTIONS */
@@ -516,8 +558,43 @@
       $('.chat').animate({scrollTop: document.body.scrollHeight}, 1000);
     };
     async function onLinkHandler(channel, tags, message, self) {
+      /* FIXME(D): high latency on callback/return user profile picture
       const { profile_image_url } = await getUserInfo(client, message, tags, channel, self);
+      <span><img src=${profile_image_url} id="ch-user-pic"></span> */
+
       const b = await replaceBadge(tags.badges);
+
+      // let q = message.split(' ');
+      // $.each(q, (i, n) => {
+      //   let m = n.split('/');
+      //   if (m.at(0) === 'https:') {
+      //     switch (m.at(2)) {
+      //       case 'imgur.com':
+      //         console.log('qwe');
+      //         break;
+      //       case 'SOMETHING ELSE':
+      //         console.log('asd');
+      //         break;
+      //     }
+      //   }
+      // });
+      // if ((message.slice(12, 19) == 'youtube') || (message.slice(8, 16) == 'youtu.be'))
+      //   var x = 'y'
+      // else if (message.slice(8, 13) === 'imgur')
+      //   var x = 'i'
+      // console.log(x);
+      //
+      // $.get(message, data => {
+      //   let m = [];
+      //   // let y = $(data, data.head).find('meta');
+      //   // $.each(y, function() {
+      //   //   m.push({name: $(this).attr('itemprop'), value: $(this).attr('content')});
+      //   // });
+      //   // console.log(m);
+      //   let i = message.split('/');
+      //   if (i.at(0).slice(0, -1) === 'https')
+      //     console.log('OK');
+      // });
 
       $.get(message, data => {
         let id = $(data).find('meta[itemprop=videoId]').attr('content');
@@ -529,7 +606,6 @@
           <div id="ch-block">
             <span id="ch-badge">${b}</span>
             <p>
-              <span><img src=${profile_image_url} id="ch-user-pic"></span>
               <span style="color: ${tags.color}" id="ch-user">${tags['display-name']}: </span>
             </p>
             <span id="ch-msg">${`<a href="${message}"><img src="${img}" id="ch-ythumb" title="${title}"></a>`}</span>
@@ -578,14 +654,13 @@
     };
 
     /* COMMANDS */
-    // function ping(client, message, tags, channel, self) {
     function ping(client, tags, channel) {
       client.ping().then(data => {
         let ping = Math.floor(Math.round(data*1000))
         client.action(channel, `@${tags.username}, your ping is ${ping}ms`)
       });
     };
-    function song(client, message, tags, channel, self) {
+    function song(client, channel) {
       spotifyCurrentTrack().then(res => typeof res === 'object' ? client.action(channel, `${res.artists.map((_artist) => _artist.name).join(', ')} - ${res.name} 👉 ${res.external_urls.spotify} 👈`) : '');
     };
     async function getUserInfo(client, message, tags, channel, self) {
@@ -595,7 +670,7 @@
 
       return await useTwitchToken(TWITCH_USER, param).then(res => res.json()).then(res => res.data[0]);
     };
-    async function getUserFollowTime(client, message, tags, channel, self) {
+    async function getUserFollowTime(client, tags, channel) {
       let param = $.param({
         to_id: twitch_user_id,
         from_login: tags.username
@@ -614,6 +689,32 @@
       }
       client.action(channel, `@${tags.username}, you've been following the channel since [${date.toLocaleDateString('en-UK', options)}]`)
     };
+    // async function getTimeFollow(client, message, tags, channel, self) {
+    //   let param = $.param({
+    //     to_id: twitch_user_id,
+    //     from_login: tags.username
+    //   });
+    //
+    //   let t = await useTwitchToken(TWITCH_FOLLOW, param).then(res => res.json()).then(res => res.data[0].followed_at);
+    //   let n = new Date().getTime();
+    //   let f = (n - Date.parse(t));
+    //   let year, month, day, hour, minute, second;
+    //
+    //   second = Math.floor(f / 1000);
+    //   minute = Math.floor(second / 60);
+    //   second = second % 60;
+    //   hour = Math.floor(minute / 60);
+    //   minute = minute % 60;
+    //   day = Math.floor(hour / 24);
+    //   hour = hour % 24;
+    //   month = Math.floor(day / 30);
+    //   day = day % 30;
+    //   year = Math.floor(month / 12);
+    //   month = month % 12;
+    //
+    //   var q = `${year}y ${month}m ${day}d ${hour}h ${minute}m ${second}s after followed!`;
+    //   return q;
+    // };
     async function getBadgesGlobal(client, message, tags, channel, self) {
       return await useTwitchToken(TWITCH_BADGES_GLOBAL).then(res => res.json()).then(res => res.data);
     };
@@ -643,32 +744,6 @@
       });
 
       return useTwitchToken(TWITCH_CHANNEL, param).then(res => res.json()).then(res => res.data[0]);
-    };
-    async function getTimeFollow(client, message, tags, channel, self) {
-      let param = $.param({
-        to_id: twitch_user_id,
-        from_login: tags.username
-      });
-
-      let t = await useTwitchToken(TWITCH_FOLLOW, param).then(res => res.json()).then(res => res.data[0].followed_at);
-      let n = new Date().getTime();
-      let f = (n - Date.parse(t));
-      let year, month, day, hour, minute, second;
-
-      second = Math.floor(f / 1000);
-      minute = Math.floor(second / 60);
-      second = second % 60;
-      hour = Math.floor(minute / 60);
-      minute = minute % 60;
-      day = Math.floor(hour / 24);
-      hour = hour % 24;
-      month = Math.floor(day / 30);
-      day = day % 30;
-      year = Math.floor(month / 12);
-      month = month % 12;
-
-      var q = `${year}y ${month}m ${day}d ${hour}h ${minute}m ${second}s after followed!`;
-      return q;
     };
 
     useTwitchToken(TWITCH_EMOTES_GLOBAL).then(res => res.json()).then(res => {
@@ -700,6 +775,7 @@
       getAllBadges = x;
     });
 
+    /* example code */
     function parseMessage(message) {
       // Contains the component parts.
       let parsedMessage = {
@@ -776,7 +852,6 @@
 
       return parsedMessage;
     };
-
     // Parses the tags component of the IRC message.
     function parseTags(tags) {
       // badge-info=;badges=broadcaster/1;color=#0000FF;...
@@ -858,7 +933,6 @@
 
       return dictParsedTags;
     };
-
     // Parses the command component of the IRC message.
     function parseCommand(rawCommandComponent) {
       let parsedCommand = null;
@@ -934,7 +1008,6 @@
 
       return parsedCommand;
     };
-
     // Parses the source (nick and host) components of the IRC message.
     function parseSource(rawSourceComponent) {
       // Not all messages contain a source
@@ -948,7 +1021,6 @@
         }
       }
     };
-
     // Parsing the IRC parameters component if it contains a command (e.g., !dice).
     function parseParameters(rawParametersComponent, command) {
       let idx = 0
