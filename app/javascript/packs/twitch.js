@@ -23,13 +23,22 @@
     let skip_count = 0;
     let announceCount = 0;
     // array of all:
-    let getAllEmotes;   // emotes
-    let getAllBadges;   // badges
-    let banWords = [
-      { name: 'qwe', reason: 'qwe'},
-      { name: 'asd', reason: 'asd'},
-      { name: 'zxc', reason: 'zxc'}
-    ];  // ban-words
+    let getAllEmotes;     // emotes
+    let getAllBadges;     // badges
+    let banWords = [      // ban-words
+      { name: 'qwe', reason: 'qwe' },
+      { name: 'asd', reason: 'asd' },
+      { name: 'zxc', reason: 'zxc' }
+    ];
+    let banPhrases = [    // ban phrases
+      { id: 1, text: 'Is permanently banned from this channel' },
+      { id: 2, text: 'disintegrated' },
+      /*
+      { id: 3, text: 'var 3' },
+      ...
+      add more vars
+      */
+    ];
 
     /* ENDPOINTS */
     const TWITCH_TOKEN =         'https://id.twitch.tv/oauth2/token';
@@ -287,25 +296,23 @@
         password: process.env.BOT_PASSWORD,
       }
     }
-
-    const commands = {
-      bot: {
-        response: (user) =>
-          `@${user}, KonCha`
-      },
-      roll: {
-        response: (user) =>
-          `@${user} roll: [ ${Math.floor(Math.random() * 100) + 1} ]`
-      },
-      dice: {
-        response: (user) =>
-          `@${user} dice: [ ${Math.floor(Math.random() * 6) + 1} ]`
-      },
-      github: {
-        response: process.env.GITHUB
-      },
-    }
-
+    // const commands = {
+    //   bot: {
+    //     response: (user) =>
+    //       `@${user}, KonCha`
+    //   },
+    //   roll: {
+    //     response: (user) =>
+    //       `@${user} roll: [ ${Math.floor(Math.random() * 100) + 1} ]`
+    //   },
+    //   dice: {
+    //     response: (user) =>
+    //       `@${user} dice: [ ${Math.floor(Math.random() * 6) + 1} ]`
+    //   },
+    //   github: {
+    //     response: process.env.GITHUB
+    //   },
+    // }
     const allSound = {
       // <COMMAND_NAME_1>: '/sounds/<FILE_NAME_1>.wav',
       // <COMMAND_NAME_2>: '/sounds/<FILE_NAME_2>.wav',
@@ -354,56 +361,42 @@
       let msg = message.toLowerCase();
 
       // TODO(D): create extended|strict check for onMessageHandler
-      // if (msg.charAt(0) === '!') {
-      //   const [raw, command, argument] = message.match(regexpCommand);
-      //   const { response } = commands[command] || {};
-      //   typeof response === 'function' ? client.action(channel, response(tags.username)) : client.action(channel, response);
-      // } else if ((msg.slice(12, 19) == 'youtube') || (msg.slice(8, 16) == 'youtu.be') || (msg.slice(8, 13) === 'imgur'))
+      const [raw, command, argument] = message.match(regexpCommand);
+      // const { response } = commands[command] || {};
+      // typeof response === 'function' ? client.action(channel, response(tags.username)) : client.action(channel, response);
+
+      // if ((msg.slice(12, 19) == 'youtube') || (msg.slice(8, 16) == 'youtu.be') || (msg.slice(8, 13) === 'imgur'))
       //   onLinkHandler(channel, tags, message, self);
       // else if ((msg.charAt(0) !== prefix) && (msg.slice(0, 4) !== 'http'))
       //   banWords.find(({name}) => name === msg) ? client.deletemessage(channel, tags.id) : onMessageHandler(channel, tags, message, self);
 
-      const [raw, command, argument] = message.match(regexpCommand);
-
       /* switch/case caommands */
       switch (command) {
+        /* --- Spotify --- */
+        case 'song':
+          spotifyCurrentTrack().then(res => {
+            if (typeof res === 'object')
+              client.action(channel, `${res.artists.map((_artist) => _artist.name).join(', ')} - ${res.name} 👇 ${res.external_urls.spotify}`);
+          });
+          break;
         case 'next':
-          nextSong(), sleep(500).then(() => spotifyCurrentTrack())
-          break
+          nextSong(), sleep(500).then(() => spotifyCurrentTrack());
+          break;
         case 'prev':
-          prevSong(), sleep(500).then(() => spotifyCurrentTrack())
-          break
+          prevSong(), sleep(500).then(() => spotifyCurrentTrack());
+          break;
         case 'pause':
-          pauseSong(), $('#btn-p img').attr('src', '/images/play.svg'), sleep(500).then(() => spotifyCurrentTrack())
-          break
+          pauseSong(), $('#btn-p img').attr('src', '/images/play.svg'), sleep(500).then(() => spotifyCurrentTrack());
+          break;
         case 'play':
-          playSong(), $('#btn-p img').attr('src', '/images/pause.svg'), sleep(500).then(() => spotifyCurrentTrack())
-          break
+          playSong(), $('#btn-p img').attr('src', '/images/pause.svg'), sleep(500).then(() => spotifyCurrentTrack());
+          break;
         case 'mute':
-          volumeSong(0)
-          break
-        case 'announce':
-          setInterval(() => announceMessage(client, channel), 30000);
-          break
+          volumeSong(0);
+          break;
         case 'vol':
           volumeSong(parseInt(argument));
-          break
-        case 'follow':
-          getUserFollowTime(client, tags, channel);
-          break
-        case 'sound':
-          let x = 'Sound commands:';
-          $.each(allSound, function(i, n) {
-            x += ` #${i}`;
-          });
-          client.action(channel, x);
-          break
-        case 'ping':
-          ping(client, tags, channel);
-          break
-        case 'song':
-          song(client, channel);
-          break
+          break;
         case 'skip':
           if (skip_count == 3) {
             skip_count = 0;
@@ -412,67 +405,54 @@
             return
           } else
             skip_count++
-          break
+          break;
+        /* --- Twitch --- */
+        case 'bot':
+          client.say(channel, `@${tags.username}, KonCha`);
+          break;
+        case 'roll':
+          client.action(channel, `@${tags.username} roll: [ ${Math.floor(Math.random() * 100) + 1} ]`);
+          break;
+        case 'dice':
+          client.action(channel, `@${tags.username} roll: [ ${Math.floor(Math.random() * 6) + 1} ]`);
+          break;
+        case 'announce':
+          setInterval(() => announceMessage(client, channel), 30000);
+          break;
+        case 'follow':
+          getUserFollowTime(client, tags, channel);
+          break;
+        case 'ping':
+          client.ping().then(data => client.action(channel, `@${tags.username}, your ping is ${Math.floor(Math.round(data*1000))}ms`));
+          break;
+        case 'ban':
+          client.action(channel, `${argument} ${banPhrases[(Math.floor(Math.random() * banPhrases.length))].text}`);
+          break;
+        /* --- Sound commands --- */
+        case 'sound':
+          let x = 'Sound commands:';
+          $.each(allSound, function(i, n) {
+            x += ` #${i}`;
+          });
+          client.action(channel, x);
+          break;
+        /* --- Links --- */
+        case 'github':
+          client.action(channel, `GitHub: ${process.env.GITHUB}`);
+          break;
       }
 
-      // /* commands for mods */
-      // if (tags.mod == true || tags.username === twitch_user_name) {
-      //   if (msg === '!next') nextSong(), sleep(500).then(() => spotifyCurrentTrack());
-      //   if (msg === '!prev') prevSong(), sleep(500).then(() => spotifyCurrentTrack());
-      //   if (msg === '!pause') pauseSong(), $('#btn-p img').attr('src', '/images/play.svg'), sleep(500).then(() => spotifyCurrentTrack());
-      //   if (msg === '!play') playSong(), $('#btn-p img').attr('src', '/images/pause.svg'), sleep(500).then(() => spotifyCurrentTrack());
-      //   if (msg.slice(0, 4) === '!vol') volumeSong(parseInt(msg.slice(5)));
-      //   if (msg === '!mute') volumeSong(0);
-      //   if (msg === '!announce')
-      //     setInterval(() =>
-      //       announceMessage(client, channel), 30000);
-      // };
-      //
-      // /* commands for all */
-      // if (msg === '!sound') {
-      //   var x = 'Sound commands:';
-      //   $.each(allSound, function(i, n) {
-      //     x += ` #${i}`;
-      //   });
-      //   client.action(channel, x);
-      // };
-      // if (msg.charAt(0) === prefix) {
-      //   let soundCommand = message.substring(1);
-      //   let audio = new Audio(`/sounds/${soundCommand}.wav`);
-      //   // audio.autoplay = true;
-      //   // audio.muted = true;
-      //   audio.volume = 0.1;
-      //   audio.play();
-      // };
-      // if (msg === '!ping') ping(client, tags, channel);
-      // if (msg.slice(0, 4) === '!ban') {
-      //   const ban = {
-      //     1: 'Is permanently banned from this channel',
-      //     2: 'var 2',
-      //     3: 'var 3',
-      //     4: 'var 4'
-      //   };
-      //   var n = Math.floor(Math.random() * 4) + 1;
-      //   client.action(channel, `${msg.slice(5)} ${ban[n]}`);
-      // };
-      // if (msg === '!song') song(client, channel);
-      // if (msg === 'skip') { // need to validate uniq user message by tags['user-id']
-      //   skip_count++;
-      //   if (skip_count == 3) {
-      //     skip_count = 0;
-      //     nextSong();
-      //     client.action(channel, `Song has been skipped`);
-      //     return;
-      //   }
-      // };
-      // if (msg === '!follow') getUserFollowTime(client, tags, channel);
+      if (msg.charAt(0) === prefix) {
+        let soundCommand = msg.substring(1);
+        let audio = new Audio(`/sounds/${soundCommand}.wav`);
+        // audio.autoplay = true;
+        // audio.muted = true;
+        audio.volume = 0.1;
+        audio.play();
+      };
 
       // ban case
       // if (msg === '!qwe') client.ban(channel, 'asd', 'qwe'), client.action(channel, `asd has been banned!`) // first: nickname, second: reason
-      // delete case
-      // if (msg.charAt(0) === 'q') client.deletemessage(channel, tags.id)
-      // announce case
-      // if (msg === '!qwe') client.say(channel, '/announce asd!');
     });
 
     /* FUNCTIONS */
@@ -654,15 +634,6 @@
     };
 
     /* COMMANDS */
-    function ping(client, tags, channel) {
-      client.ping().then(data => {
-        let ping = Math.floor(Math.round(data*1000))
-        client.action(channel, `@${tags.username}, your ping is ${ping}ms`)
-      });
-    };
-    function song(client, channel) {
-      spotifyCurrentTrack().then(res => typeof res === 'object' ? client.action(channel, `${res.artists.map((_artist) => _artist.name).join(', ')} - ${res.name} 👉 ${res.external_urls.spotify} 👈`) : '');
-    };
     async function getUserInfo(client, message, tags, channel, self) {
       let param = $.param({
         login: tags.username
