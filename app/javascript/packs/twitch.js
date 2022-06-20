@@ -39,6 +39,16 @@
       add more vars
       */
     ];
+    let announceList = [  // announce messages
+      { text: 'qwe!' },
+      { text: 'asd!' },
+      { text: 'zxc!' }
+    ];
+    let siteWhiteList = [
+      { id: 1, name: 'YouTube', link: 'www.youtube.com' },
+      { id: 2, name: 'YouTube', link: 'youtu.be' },
+      { id: 3, name: 'Imgur', link: 'imgur.com' }
+    ];
 
     /* ENDPOINTS */
     const TWITCH_TOKEN =         'https://id.twitch.tv/oauth2/token';
@@ -359,97 +369,97 @@
     client.on('chat', (channel, tags, message, self) => {
       if (self) return;
       let msg = message.toLowerCase();
+      let messageType = msg.charAt(0);
 
-      // TODO(D): create extended|strict check for onMessageHandler
+      /*
+      // NOTE(D): old method for commands
       const [raw, command, argument] = message.match(regexpCommand);
-      // const { response } = commands[command] || {};
-      // typeof response === 'function' ? client.action(channel, response(tags.username)) : client.action(channel, response);
+      const { response } = commands[command] || {};
+      typeof response === 'function' ? client.action(channel, response(tags.username)) : client.action(channel, response);
+      */
 
-      // if ((msg.slice(12, 19) == 'youtube') || (msg.slice(8, 16) == 'youtu.be') || (msg.slice(8, 13) === 'imgur'))
-      //   onLinkHandler(channel, tags, message, self);
-      // else if ((msg.charAt(0) !== prefix) && (msg.slice(0, 4) !== 'http'))
-      //   banWords.find(({name}) => name === msg) ? client.deletemessage(channel, tags.id) : onMessageHandler(channel, tags, message, self);
-
-      /* switch/case caommands */
-      switch (command) {
-        /* --- Spotify --- */
-        case 'song':
-          spotifyCurrentTrack().then(res => {
-            if (typeof res === 'object')
-              client.action(channel, `${res.artists.map((_artist) => _artist.name).join(', ')} - ${res.name} 👇 ${res.external_urls.spotify}`);
-          });
-          break;
-        case 'next':
-          nextSong(), sleep(500).then(() => spotifyCurrentTrack());
-          break;
-        case 'prev':
-          prevSong(), sleep(500).then(() => spotifyCurrentTrack());
-          break;
-        case 'pause':
-          pauseSong(), $('#btn-p img').attr('src', '/images/play.svg'), sleep(500).then(() => spotifyCurrentTrack());
-          break;
-        case 'play':
-          playSong(), $('#btn-p img').attr('src', '/images/pause.svg'), sleep(500).then(() => spotifyCurrentTrack());
-          break;
-        case 'mute':
-          volumeSong(0);
-          break;
-        case 'vol':
-          volumeSong(parseInt(argument));
-          break;
-        case 'skip':
-          if (skip_count == 3) {
-            skip_count = 0;
-            nextSong();
-            client.action(channel, `Song has been skipped`);
-            return
-          } else
-            skip_count++
-          break;
-        /* --- Twitch --- */
-        case 'bot':
-          client.say(channel, `@${tags.username}, KonCha`);
-          break;
-        case 'roll':
-          client.action(channel, `@${tags.username} roll: [ ${Math.floor(Math.random() * 100) + 1} ]`);
-          break;
-        case 'dice':
-          client.action(channel, `@${tags.username} roll: [ ${Math.floor(Math.random() * 6) + 1} ]`);
-          break;
-        case 'announce':
-          setInterval(() => announceMessage(client, channel), 30000);
-          break;
-        case 'follow':
-          getUserFollowTime(client, tags, channel);
-          break;
-        case 'ping':
-          client.ping().then(data => client.action(channel, `@${tags.username}, your ping is ${Math.floor(Math.round(data*1000))}ms`));
-          break;
-        case 'ban':
-          client.action(channel, `${argument} ${banPhrases[(Math.floor(Math.random() * banPhrases.length))].text}`);
-          break;
-        /* --- Sound commands --- */
-        case 'sound':
-          let x = 'Sound commands:';
-          $.each(allSound, function(i, n) {
-            x += ` #${i}`;
-          });
-          client.action(channel, x);
-          break;
-        /* --- Links --- */
-        case 'github':
-          client.action(channel, `GitHub: ${process.env.GITHUB}`);
-          break;
-      }
-
-      if (msg.charAt(0) === prefix) {
+      if (messageType === '!') {
+        const [raw, command, argument] = msg.match(regexpCommand);
+        /* switch/case caommands */
+        switch (command) {
+          /* --- Spotify --- */
+          case 'song':
+            spotifyCurrentTrack().then(res => {
+              if (typeof res === 'object')
+                client.action(channel, `${res.artists.map((_artist) => _artist.name).join(', ')} - ${res.name} 👇 ${res.external_urls.spotify}`);
+            });
+            break;
+          case 'next':
+            nextSong(), sleep(500).then(() => spotifyCurrentTrack());
+            break;
+          case 'prev':
+            prevSong(), sleep(500).then(() => spotifyCurrentTrack());
+            break;
+          case 'pause':
+            pauseSong(), $('#btn-p img').attr('src', '/images/play.svg'), sleep(500).then(() => spotifyCurrentTrack());
+            break;
+          case 'play':
+            playSong(), $('#btn-p img').attr('src', '/images/pause.svg'), sleep(500).then(() => spotifyCurrentTrack());
+            break;
+          case 'mute':
+            volumeSong(0);
+            break;
+          case 'vol':
+            volumeSong(parseInt(argument));
+            break;
+          case 'skip':
+            if (skip_count == 3) {
+              skip_count = 0;
+              nextSong();
+              client.action(channel, `Song has been skipped`);
+              return
+            } else
+              skip_count++
+            break;
+          /* --- Twitch --- */
+          case 'bot':
+            client.say(channel, `@${tags.username}, KonCha`);
+            break;
+          case 'roll':
+            client.action(channel, `@${tags.username} roll: [ ${Math.floor(Math.random() * 100) + 1} ]`);
+            break;
+          case 'dice':
+            client.action(channel, `@${tags.username} roll: [ ${Math.floor(Math.random() * 6) + 1} ]`);
+            break;
+          case 'announce':
+            setInterval(() => announceMessage(client, channel), 30000);
+            break;
+          case 'follow':
+            getUserFollowTime(client, tags, channel);
+            break;
+          case 'ping':
+            client.ping().then(data => client.action(channel, `@${tags.username}, your ping is ${Math.floor(Math.round(data*1000))}ms`));
+            break;
+          case 'ban':
+            client.action(channel, `${argument} ${banPhrases[(Math.floor(Math.random() * banPhrases.length))].text}`);
+            break;
+          /* --- Sound commands --- */
+          case 'sound':
+            let x = 'Sound commands:';
+            $.each(allSound, function(i, n) {
+              x += ` #${i}`;
+            });
+            client.action(channel, x);
+            break;
+          /* --- Links --- */
+          case 'github':
+            client.action(channel, `GitHub: ${process.env.GITHUB}`);
+            break;
+        }
+      } else if (messageType === prefix) {
         let soundCommand = msg.substring(1);
         let audio = new Audio(`/sounds/${soundCommand}.wav`);
         // audio.autoplay = true;
         // audio.muted = true;
         audio.volume = 0.1;
         audio.play();
-      };
+      } else
+        banWords.find(({name}) => name === msg) ? client.deletemessage(channel, tags.id) : onMessageHandler(channel, tags, message, self);
 
       // ban case
       // if (msg === '!qwe') client.ban(channel, 'asd', 'qwe'), client.action(channel, `asd has been banned!`) // first: nickname, second: reason
@@ -517,32 +527,47 @@
     async function onMessageHandler(channel, tags, message, self) {
       const r = message.replace(/(\<\/?\w+\ ?>)/g, '\*');
 
-      /* FIXME(D): high latency on callback/return user profile picture
+      /*
+      // FIXME(D): high latency on callback/return user profile picture
       const { profile_image_url } = await getUserInfo(client, message, tags, channel, self);
-      <span><img src=${profile_image_url} id="ch-user-pic"></span> */
+      <span><img src=${profile_image_url} id="ch-user-pic"></span>
+      */
+      /*
+      // NOTE(D): image from link in chat
+      <span id="ch-msg">${`<a href="${message}"><img src="${img}" id="ch-ythumb" title="${title}"></a>`}</span>
+      */
 
-      const b = replaceBadge(tags.badges);
-      const e = replaceEmote(r);
-
-      $('.chat').append(`
-        <div id="ch-block">
-          <span id="ch-badge">${b}</span>
-          <p>
-            <span style="color: ${tags.color}" id="ch-user">${tags['display-name']}: </span>
-          </p>
-          <span id="ch-msg">${e}</span>
-        </div>
-      `);
-      clearChat();
-
-      $('.chat').animate({scrollTop: document.body.scrollHeight}, 1000);
-    };
-    async function onLinkHandler(channel, tags, message, self) {
-      /* FIXME(D): high latency on callback/return user profile picture
-      const { profile_image_url } = await getUserInfo(client, message, tags, channel, self);
-      <span><img src=${profile_image_url} id="ch-user-pic"></span> */
-
-      const b = await replaceBadge(tags.badges);
+      // if ((r.slice(12, 19) == 'youtube') || (r.slice(8, 16) == 'youtu.be') || (r.slice(8, 13) === 'imgur'))
+      //   console.log(r);
+      let urlCheck = r.split('/')[2];
+      const checkWL = siteWhiteList.find(({link}) => link === urlCheck);
+      if (checkWL) {
+        switch (urlCheck) {
+          case siteWhiteList[0].link:
+            console.log('YOUTUBE');
+          case siteWhiteList[1].link:
+            $.get(message, data => {
+              let id = $(data).find('meta[itemprop=videoId]').attr('content');
+              let title = $(data).find('meta[itemprop=name]').attr('content');
+              // let i = `https://img.youtube.com/vi/${id}/0.jpg`;
+              let img = `https://i.ytimg.com/vi/${id}/maxresdefault.jpg`;
+              let q = [
+                { id: id },
+                { link: img },
+                { title: title }
+              ];
+              console.log(q);
+              // <span id="ch-msg">${`<a href="${message}"><img src="${img}" id="ch-ythumb" title="${title}"></a>`}</span>
+            });
+            console.log('YOUTUBE');
+            break;
+          case siteWhiteList[2].link:
+            console.log('IMGUR');
+            break;
+          default:
+            console.log('OTHER');
+        }
+      }
 
       // let q = message.split(' ');
       // $.each(q, (i, n) => {
@@ -576,25 +601,21 @@
       //     console.log('OK');
       // });
 
-      $.get(message, data => {
-        let id = $(data).find('meta[itemprop=videoId]').attr('content');
-        let title = $(data).find('meta[itemprop=name]').attr('content');
-        // let i = `https://img.youtube.com/vi/${id}/0.jpg`;
-        let img = `https://i.ytimg.com/vi/${id}/maxresdefault.jpg`;
+      const b = replaceBadge(tags.badges);
+      const e = replaceEmote(r);
 
-        $('.chat').append(`
-          <div id="ch-block">
-            <span id="ch-badge">${b}</span>
-            <p>
-              <span style="color: ${tags.color}" id="ch-user">${tags['display-name']}: </span>
-            </p>
-            <span id="ch-msg">${`<a href="${message}"><img src="${img}" id="ch-ythumb" title="${title}"></a>`}</span>
-          </div>
-        `);
-        clearChat();
+      $('.chat').append(`
+        <div id="ch-block">
+          <span id="ch-badge">${b}</span>
+          <p>
+            <span style="color: ${tags.color}" id="ch-user">${tags['display-name']}: </span>
+          </p>
+          <span id="ch-msg">${e}</span>
+        </div>
+      `);
+      clearChat();
 
-        $('.chat').animate({scrollTop: document.body.scrollHeight}, 1000);
-      });
+      $('.chat').animate({scrollTop: document.body.scrollHeight}, 1000);
     };
 
     function replaceBadge(b) {
@@ -621,11 +642,6 @@
     };
 
     function announceMessage(client, channel) {
-      let announceList = [
-        { text: 'qwe!' },
-        { text: 'asd!' },
-        { text: 'zxc!' }
-      ];
       if (announceCount != announceList.length) {
         client.say(channel, `/announce ${announceList[announceCount].text}`);
         announceCount++;
