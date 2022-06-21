@@ -532,77 +532,9 @@
       const { profile_image_url } = await getUserInfo(client, message, tags, channel, self);
       <span><img src=${profile_image_url} id="ch-user-pic"></span>
       */
-      /*
-      // NOTE(D): image from link in chat
-      <span id="ch-msg">${`<a href="${message}"><img src="${img}" id="ch-ythumb" title="${title}"></a>`}</span>
-      */
-
-      // if ((r.slice(12, 19) == 'youtube') || (r.slice(8, 16) == 'youtu.be') || (r.slice(8, 13) === 'imgur'))
-      //   console.log(r);
-      let urlCheck = r.split('/')[2];
-      const checkWL = siteWhiteList.find(({link}) => link === urlCheck);
-      if (checkWL) {
-        switch (urlCheck) {
-          case siteWhiteList[0].link:
-            console.log('YOUTUBE');
-          case siteWhiteList[1].link:
-            $.get(message, data => {
-              let id = $(data).find('meta[itemprop=videoId]').attr('content');
-              let title = $(data).find('meta[itemprop=name]').attr('content');
-              // let i = `https://img.youtube.com/vi/${id}/0.jpg`;
-              let img = `https://i.ytimg.com/vi/${id}/maxresdefault.jpg`;
-              let q = [
-                { id: id },
-                { link: img },
-                { title: title }
-              ];
-              console.log(q);
-              // <span id="ch-msg">${`<a href="${message}"><img src="${img}" id="ch-ythumb" title="${title}"></a>`}</span>
-            });
-            console.log('YOUTUBE');
-            break;
-          case siteWhiteList[2].link:
-            console.log('IMGUR');
-            break;
-          default:
-            console.log('OTHER');
-        }
-      }
-
-      // let q = message.split(' ');
-      // $.each(q, (i, n) => {
-      //   let m = n.split('/');
-      //   if (m.at(0) === 'https:') {
-      //     switch (m.at(2)) {
-      //       case 'imgur.com':
-      //         console.log('qwe');
-      //         break;
-      //       case 'SOMETHING ELSE':
-      //         console.log('asd');
-      //         break;
-      //     }
-      //   }
-      // });
-      // if ((message.slice(12, 19) == 'youtube') || (message.slice(8, 16) == 'youtu.be'))
-      //   var x = 'y'
-      // else if (message.slice(8, 13) === 'imgur')
-      //   var x = 'i'
-      // console.log(x);
-      //
-      // $.get(message, data => {
-      //   let m = [];
-      //   // let y = $(data, data.head).find('meta');
-      //   // $.each(y, function() {
-      //   //   m.push({name: $(this).attr('itemprop'), value: $(this).attr('content')});
-      //   // });
-      //   // console.log(m);
-      //   let i = message.split('/');
-      //   if (i.at(0).slice(0, -1) === 'https')
-      //     console.log('OK');
-      // });
 
       const b = replaceBadge(tags.badges);
-      const e = replaceEmote(r);
+      const e = replaceElements(r);
 
       $('.chat').append(`
         <div id="ch-block">
@@ -626,11 +558,56 @@
       });
       return badge;
     };
-    function replaceEmote(e) {
+    function replaceElements(e) {
       let m = [];
+      let q = [];
       $.each(e.split(' '), function(i, n) {
-        const result = getAllEmotes.find(({ name }) => name === n);
-        (result) ? m.push(`<img src=${result.link} id="ch-emote">`) : m.push(n);
+        let urlCheck = n.split('/')[2];
+        const checkWL = siteWhiteList.find(({link}) => link === urlCheck);
+        const emote = getAllEmotes.find(({ name }) => name === n);
+        if (emote) {
+          m.push(`<img src=${emote.link} id="ch-emote">`);
+        } else if (checkWL) {
+          $.get(n, data => {
+            data = $.parseHTML(data);
+            $.each(data, function(i, n) {
+              if (n.nodeName.toString().toLowerCase() == 'meta' && $(n).attr("name") != null && typeof $(n).attr("name") != "undefined") {
+                // console.log($(n).attr("name"), " = ", ($(n).attr("content") ? $(n).attr("content") : ($(n).attr("value") ? $(n).attr("value") : "")), n);
+                q.push({
+                  name: $(n).attr("name"),
+                  value : $(n).attr("content") ? $(n).attr("content") : ($(n).attr("value") ? $(n).attr("value") : "")
+                });
+              }
+            });
+          });
+          console.log(q)
+          // const x = q.find(({name}) => name === 'twitter:site');
+          // console.log(x);
+          
+          // console.log(q);
+          // switch (urlCheck) {
+          //   case siteWhiteList[0].link:
+          //   case siteWhiteList[1].link:
+          //     return $.get(n, data => {
+          //       let id = $(data).find('meta[itemprop=videoId]').attr('content');
+          //       let title = $(data).find('meta[itemprop=name]').attr('content');
+          //       // let i = `https://img.youtube.com/vi/${id}/0.jpg`;
+          //       let img = `https://i.ytimg.com/vi/${id}/maxresdefault.jpg`;
+          //       q = { id: id, link: img, title: title };
+          //     });
+          //     break;
+          //   case siteWhiteList[2].link:
+          //     let id = n.split('/').at(-1);
+          //     let title = `Link from @user`;
+          //     let img = `https://i.imgur.com/${id}.jpeg`;
+          //     q = { id: id, link: img, title: title };
+          //     break;
+          // };
+          // console.log(n);
+          // console.log(q);
+          // m.push(`<span id="ch-msg">${`<a href="${n}"><img src="${q.link}" id="ch-ythumb" title="${q.title}"></a>`}</span>`);
+        } else
+          m.push(n);
       });
       return e = m.join(' ');
     };
