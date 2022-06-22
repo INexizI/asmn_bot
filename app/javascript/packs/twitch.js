@@ -560,7 +560,8 @@
     };
     function replaceElements(e) {
       let m = [];
-      let q = [];
+      let q = [{name: 'test', value: 'done!'}];
+      let x;
       $.each(e.split(' '), function(i, n) {
         let urlCheck = n.split('/')[2];
         const checkWL = siteWhiteList.find(({link}) => link === urlCheck);
@@ -570,25 +571,25 @@
         } else if (checkWL) {
           $.get(n, data => {
             data = $.parseHTML(data);
+            x = $(data).find('meta').attr('content');
             $.each(data, function(i, n) {
               if (n.nodeName.toString().toLowerCase() == 'meta' && $(n).attr("name") != null && typeof $(n).attr("name") != "undefined") {
-                // console.log($(n).attr("name"), " = ", ($(n).attr("content") ? $(n).attr("content") : ($(n).attr("value") ? $(n).attr("value") : "")), n);
-                q.push({
-                  name: $(n).attr("name"),
-                  value : $(n).attr("content") ? $(n).attr("content") : ($(n).attr("value") ? $(n).attr("value") : "")
-                });
+                console.log($(n).attr("name"), " = ", ($(n).attr("content") ? $(n).attr("content") : ($(n).attr("value") ? $(n).attr("value") : "")), n);
+                // q.push({
+                //   name: $(n).attr("name"),
+                //   value: $(n).attr("content")
+                // });
               }
             });
           });
-          console.log(q)
           // const x = q.find(({name}) => name === 'twitter:site');
           // console.log(x);
-          
+
           // console.log(q);
           // switch (urlCheck) {
           //   case siteWhiteList[0].link:
           //   case siteWhiteList[1].link:
-          //     return $.get(n, data => {
+          //     $.get(n, data => {
           //       let id = $(data).find('meta[itemprop=videoId]').attr('content');
           //       let title = $(data).find('meta[itemprop=name]').attr('content');
           //       // let i = `https://img.youtube.com/vi/${id}/0.jpg`;
