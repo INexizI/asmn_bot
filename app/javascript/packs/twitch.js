@@ -560,8 +560,6 @@
     };
     function replaceElements(e) {
       let m = [];
-      let q = [{name: 'test', value: 'done!'}];
-      let x;
       $.each(e.split(' '), function(i, n) {
         let urlCheck = n.split('/')[2];
         const checkWL = siteWhiteList.find(({link}) => link === urlCheck);
@@ -569,48 +567,43 @@
         if (emote) {
           m.push(`<img src=${emote.link} id="ch-emote">`);
         } else if (checkWL) {
-          $.get(n, data => {
-            data = $.parseHTML(data);
-            x = $(data).find('meta').attr('content');
-            $.each(data, function(i, n) {
-              if (n.nodeName.toString().toLowerCase() == 'meta' && $(n).attr("name") != null && typeof $(n).attr("name") != "undefined") {
-                console.log($(n).attr("name"), " = ", ($(n).attr("content") ? $(n).attr("content") : ($(n).attr("value") ? $(n).attr("value") : "")), n);
-                // q.push({
-                //   name: $(n).attr("name"),
-                //   value: $(n).attr("content")
-                // });
-              }
-            });
-          });
-          // const x = q.find(({name}) => name === 'twitter:site');
-          // console.log(x);
-
-          // console.log(q);
-          // switch (urlCheck) {
-          //   case siteWhiteList[0].link:
-          //   case siteWhiteList[1].link:
-          //     $.get(n, data => {
-          //       let id = $(data).find('meta[itemprop=videoId]').attr('content');
-          //       let title = $(data).find('meta[itemprop=name]').attr('content');
-          //       // let i = `https://img.youtube.com/vi/${id}/0.jpg`;
-          //       let img = `https://i.ytimg.com/vi/${id}/maxresdefault.jpg`;
-          //       q = { id: id, link: img, title: title };
-          //     });
-          //     break;
-          //   case siteWhiteList[2].link:
-          //     let id = n.split('/').at(-1);
-          //     let title = `Link from @user`;
-          //     let img = `https://i.imgur.com/${id}.jpeg`;
-          //     q = { id: id, link: img, title: title };
-          //     break;
-          // };
-          // console.log(n);
-          // console.log(q);
-          // m.push(`<span id="ch-msg">${`<a href="${n}"><img src="${q.link}" id="ch-ythumb" title="${q.title}"></a>`}</span>`);
+          let a = qweAsd(n);
+          console.log(a);
+          // $.get(n, data => {
+          //   data = $.parseHTML(data);
+          //   const meta = getMetaData(data);
+          //   let img = meta.find(({name}) => name === 'twitter:image');
+          //   m.push(`<span id="ch-msg">${`<a href="${n}"><img src="${img.value}" id="ch-ythumb"></a>`}</span>`);
+          //   console.log(m);
+          // });
         } else
           m.push(n);
       });
       return e = m.join(' ');
+    };
+    function getMetaData(md) {
+      let x = [];
+      $.each(md, function(i, n) {
+        if (n.nodeName.toString().toLowerCase() == 'meta' && $(n).attr("name") != null && typeof $(n).attr("name") != "undefined") {
+          x.push({
+            name: $(n).attr('name'),
+            value: ($(n).attr('content') ? $(n).attr('content') : ($(n).attr('value') ? $(n).attr('value') : ''))
+          });
+        }
+      });
+      return x;
+    };
+    function qweAsd(q) {
+      let y = [];
+      $.get(q, data => {
+        data = $.parseHTML(data);
+        const meta = getMetaData(data);
+        console.log(meta);
+        let img = meta.find(({name}) => name === 'twitter:image');
+        y.push(`<span id="ch-msg">${`<a href="${q}"><img src="${img.value}" id="ch-ythumb"></a>`}</span>`);
+        console.log(y);
+        return y;
+      });
     };
     function clearChat() {
       let msg_limit = $('.chat div').length;
