@@ -47,7 +47,8 @@
     let siteWhiteList = [
       { id: 1, name: 'YouTube', link: 'www.youtube.com' },
       { id: 2, name: 'YouTube', link: 'youtu.be' },
-      { id: 3, name: 'Imgur', link: 'imgur.com' }
+      { id: 3, name: 'Imgur', link: 'imgur.com' },
+      { id: 4, name: 'GitHub', link: 'github.com' }
     ];
 
     /* ENDPOINTS */
@@ -459,6 +460,7 @@
         audio.volume = 0.1;
         audio.play();
       } else
+        // TODO(D): Check all words in message
         banWords.find(({name}) => name === msg) ? client.deletemessage(channel, tags.id) : onMessageHandler(channel, tags, message, self);
 
       // ban case
@@ -537,17 +539,15 @@
       const e = replaceElements(r);
 
       $('.chat').append(`
-        <div id="ch-block">
-          <span id="ch-badge">${b}</span>
-          <p>
-            <span style="color: ${tags.color}" id="ch-user">${tags['display-name']}: </span>
-          </p>
-          <span id="ch-msg">${e}</span>
-        </div>
-      `);
+          <div id="ch-block">
+            <span id="ch-badge">${b}</span>
+            <p>
+              <span style="color: ${tags.color}" id="ch-user">${tags['display-name']}: </span>
+            </p>
+            <span id="ch-msg">${e}</span>
+          </div>`)
+        .animate({scrollTop: $('.chat').prop('scrollHeight')}, 1000);
       clearChat();
-
-      $('.chat').animate({scrollTop: document.body.scrollHeight}, 1000);
     };
 
     function replaceBadge(b) {
@@ -564,19 +564,19 @@
         let urlCheck = n.split('/')[2];
         const checkWL = siteWhiteList.find(({link}) => link === urlCheck);
         const emote = getAllEmotes.find(({ name }) => name === n);
-        if (emote) {
+        if (emote)
           m.push(`<img src=${emote.link} id="ch-emote">`);
-        } else if (checkWL) {
-          let a = qweAsd(n);
-          console.log(a);
-          // $.get(n, data => {
-          //   data = $.parseHTML(data);
-          //   const meta = getMetaData(data);
-          //   let img = meta.find(({name}) => name === 'twitter:image');
-          //   m.push(`<span id="ch-msg">${`<a href="${n}"><img src="${img.value}" id="ch-ythumb"></a>`}</span>`);
-          //   console.log(m);
-          // });
-        } else
+        else if (checkWL)
+          $.ajax({ url: n, type: 'get', dataType: 'html', async: false, success: function(data) {
+            let img;
+            let site;
+            data = $.parseHTML(data);
+            const meta = getMetaData(data);
+            site = meta.find(({name}) => name === 'twitter:site');
+            site.value == '@github' ? img = meta.find(({name}) => name === 'twitter:image:src') : img = meta.find(({name}) => name === 'twitter:image');
+            m.push(`<span id="ch-msg">${`<a href="${n}"><img src="${img.value}" id="ch-ythumb"></a>`}</span>`);
+          }});
+        else
           m.push(n);
       });
       return e = m.join(' ');
@@ -584,26 +584,13 @@
     function getMetaData(md) {
       let x = [];
       $.each(md, function(i, n) {
-        if (n.nodeName.toString().toLowerCase() == 'meta' && $(n).attr("name") != null && typeof $(n).attr("name") != "undefined") {
+        if (n.nodeName.toString().toLowerCase() == 'meta' && $(n).attr("name") != null && typeof $(n).attr("name") != "undefined")
           x.push({
             name: $(n).attr('name'),
             value: ($(n).attr('content') ? $(n).attr('content') : ($(n).attr('value') ? $(n).attr('value') : ''))
           });
-        }
       });
       return x;
-    };
-    function qweAsd(q) {
-      let y = [];
-      $.get(q, data => {
-        data = $.parseHTML(data);
-        const meta = getMetaData(data);
-        console.log(meta);
-        let img = meta.find(({name}) => name === 'twitter:image');
-        y.push(`<span id="ch-msg">${`<a href="${q}"><img src="${img.value}" id="ch-ythumb"></a>`}</span>`);
-        console.log(y);
-        return y;
-      });
     };
     function clearChat() {
       let msg_limit = $('.chat div').length;
