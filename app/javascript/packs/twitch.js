@@ -459,9 +459,10 @@
         // audio.muted = true;
         audio.volume = 0.1;
         audio.play();
-      } else
-        // TODO(D): Check all words in message
-        banWords.find(({name}) => name === msg) ? client.deletemessage(channel, tags.id) : onMessageHandler(channel, tags, message, self);
+      } else {
+        const ban = banCheck(msg);
+        ban ? client.deletemessage(channel, tags.id) : onMessageHandler(channel, tags, message, self);
+      }
 
       // ban case
       // if (msg === '!qwe') client.ban(channel, 'asd', 'qwe'), client.action(channel, `asd has been banned!`) // first: nickname, second: reason
@@ -591,6 +592,15 @@
           });
       });
       return x;
+    };
+    function banCheck(w) {
+      let c = false;
+      $.each(w.split(' '), function(i, n) {
+        const ban = banWords.find(({name}) => name === n);
+        if (ban != undefined) c = true;
+      });
+      console.log(c);
+      return c;
     };
     function clearChat() {
       let msg_limit = $('.chat div').length;

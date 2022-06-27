@@ -33,6 +33,8 @@
 /config/master.key
 /config/secrets.yml
 .env
+localhost.crt
+localhost.key
 
 /public/images
 /public/packs

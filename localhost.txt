@@ -1,0 +1,2 @@
+// command for certificate and key for https localhost
+openssl req -x509 -sha256 -nodes -newkey rsa:2048 -days 365 -keyout localhost.key -out localhost.crt
