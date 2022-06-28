@@ -541,10 +541,16 @@
 
       $('.chat').append(`
           <div id="ch-block">
-            <span id="ch-badge">${b}</span>
-            <p>
-              <span style="color: ${tags.color}" id="ch-user">${tags['display-name']}: </span>
+            <p id="user-badge">${b}</p>
+            <p id="user-name">
+              <span style="color: ${tags.color}" id="ch-user" data-controller="ban", data-action="click->ban#userinfo" }>${tags['display-name']}: </span>
             </p>
+            <div id="user-info">
+              <span>10m</span>
+              <span>1h</span>
+              <span>1w</span>
+              <span><img src="/images/slash.svg" id="ch-badge"></span>
+            </div>
             <span id="ch-msg">${e}</span>
           </div>`)
         .animate({scrollTop: $('.chat').prop('scrollHeight')}, 1000);
@@ -557,6 +563,7 @@
         const result = getAllBadges.find( ({ name }) => name === n );
         badge += `<img src=${result.link} id="ch-badge">`;
       });
+      // badge += `<img src='/images/slash.svg'>`;
       return badge;
     };
     function replaceElements(e) {
@@ -599,7 +606,6 @@
         const ban = banWords.find(({name}) => name === n);
         if (ban != undefined) c = true;
       });
-      console.log(c);
       return c;
     };
     function clearChat() {
