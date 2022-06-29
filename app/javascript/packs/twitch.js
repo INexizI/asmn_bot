@@ -63,6 +63,7 @@
     const TWITCH_EMOTES_SET =    'https://api.twitch.tv/helix/chat/emotes/set';
     const TWITCH_POLL =          'https://api.twitch.tv/helix/polls';
     const TWITCH_PREDICTIONS =   'https://api.twitch.tv/helix/predictions';
+    const TWITCH_BAN =           'https://api.twitch.tv/helix/moderation/bans';
 
     const AUTHORIZE =            'https://accounts.spotify.com/authorize';
     const TOKEN_ENDPOINT =       'https://accounts.spotify.com/api/token';
@@ -439,6 +440,9 @@
           case 'ban':
             client.action(channel, `${argument} ${banPhrases[(Math.floor(Math.random() * banPhrases.length))].text}`);
             break;
+          case 'time':
+            banUser(client, channel, argument);
+            break;
           /* --- Sound commands --- */
           case 'sound':
             let x = 'Sound commands:';
@@ -462,7 +466,7 @@
       } else {
         const ban = banCheck(msg);
         ban ? client.deletemessage(channel, tags.id) : onMessageHandler(channel, tags, message, self);
-      }
+      };
 
       // ban case
       // if (msg === '!qwe') client.ban(channel, 'asd', 'qwe'), client.action(channel, `asd has been banned!`) // first: nickname, second: reason
@@ -545,12 +549,6 @@
             <p id="user-name">
               <span style="color: ${tags.color}" id="ch-user" data-controller="ban", data-action="click->ban#userinfo" }>${tags['display-name']}: </span>
             </p>
-            <div id="user-info">
-              <span>10m</span>
-              <span>1h</span>
-              <span>1w</span>
-              <span><img src="/images/slash.svg" id="ch-badge"></span>
-            </div>
             <span id="ch-msg">${e}</span>
           </div>`)
         .animate({scrollTop: $('.chat').prop('scrollHeight')}, 1000);
@@ -624,9 +622,9 @@
     };
 
     /* COMMANDS */
-    async function getUserInfo(client, message, tags, channel, self) {
+    async function getUserInfo(user) {
       let param = $.param({
-        login: tags.username
+        login: user
       });
 
       return await useTwitchToken(TWITCH_USER, param).then(res => res.json()).then(res => res.data[0]);
@@ -680,7 +678,7 @@
       return await useTwitchToken(TWITCH_BADGES_GLOBAL).then(res => res.json()).then(res => res.data);
     };
     async function getChannelBadges(client, message, tags, channel, self) {
-      let param = $.param({
+      const param = $.param({
         broadcaster_id: twitch_user_id,
       });
 
@@ -690,7 +688,7 @@
       return await useTwitchToken(TWITCH_EMOTES_GLOBAL).then(res => res.json()).then(res => res.data);
     };
     async function getChannelEmotes(client, message, tags, channel, self) {
-      let param = $.param({
+      const param = $.param({
         broadcaster_id: twitch_user_id,
       });
 
@@ -700,11 +698,16 @@
       return client.emotesets;
     };
     async function getStreamInfo(client, message, tags, channel, self) {
-      let param = $.param({
+      const param = $.param({
         broadcaster_id: twitch_user_id,
       });
 
       return useTwitchToken(TWITCH_CHANNEL, param).then(res => res.json()).then(res => res.data[0]);
+    };
+    async function banUser(client, channel, user) {
+      const userData = await getUserInfo(user);
+
+      client.timeout(channel, userData.login, 10, 'banned via ASMN');
     };
 
     useTwitchToken(TWITCH_EMOTES_GLOBAL).then(res => res.json()).then(res => {

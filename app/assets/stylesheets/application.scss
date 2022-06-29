@@ -126,15 +126,14 @@ body {
       height: 18px;
       padding: 0 3px;
     }
-    #user-name { flex-direction: column; }
+    // #user-name { flex-direction: column; }
     #user-info {
-      display: none;
-      width: 180px;
-      height: 40px;
-      position: absolute;
-      background: azure;
+      position: relative;
+      top: 25px;
+      left: -80px;
       border: 1px solid;
       border-radius: 3px;
+      background: azure;
 
       span {
         cursor: pointer;
