@@ -126,19 +126,30 @@ body {
       height: 18px;
       padding: 0 3px;
     }
-    // #user-name { flex-direction: column; }
+    #user-name { height: 24px; }
     #user-info {
+      display: flex;
+      width: 250px;
+      height: 50px;
       position: relative;
       top: 25px;
       left: -80px;
-      border: 1px solid;
+      padding: 3px;
       border-radius: 3px;
-      background: azure;
+      background: lightgrey;
 
       span {
         cursor: pointer;
+        padding: 10px;
+        margin: auto;
+        font-size: 15px;
+      }
+
+      #close {
+        position: absolute;
+        top: 0;
+        right: 5px;
         padding: 5px;
-        margin: 0 5px;
       }
     }
     #ch-ythumb {
