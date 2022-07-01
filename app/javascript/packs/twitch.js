@@ -331,7 +331,7 @@
     }
 
     const client = new tmi.Client(config)
-    client.connect().catch(console.error);
+    client.connect().catch(console.error)
 
     /* EVENTS */
     client.on('connected', (address, port) => {
