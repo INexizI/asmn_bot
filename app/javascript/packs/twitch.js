@@ -92,6 +92,7 @@
         grant_type: 'client_credentials',
         scope: [
           'user:read:email',
+          'moderation:read',
           'channel:manage:polls',
           'channel:manage:broadcast',
           'channel:manage:predictions'
@@ -547,7 +548,7 @@
           <div id="ch-block">
             <p id="user-badge">${b}</p>
             <p id="user-name">
-              <span style="color: ${tags.color}" id="ch-user" data-controller="ban", data-action="click->ban#userinfo" }>${tags['display-name']}: </span>
+              <span style="color: ${tags.color}" id="ch-user" data-controller="ban", data-action="click->ban#userinfo" }>${tags['display-name']}</span>
             </p>
             <span id="ch-msg">${e}</span>
           </div>`)

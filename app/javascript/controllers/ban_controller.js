@@ -1,10 +1,6 @@
 import { Controller } from '@hotwired/stimulus'
 import tmi from 'tmi.js'
 
-const mods = [
-  { name: process.env.TEST_TEST },
-]
-
 const config = {
   options: { debug: true },
   connection: {
@@ -25,6 +21,29 @@ const client = new tmi.Client(config)
 client.connect()
 
 export default class extends Controller {
+  async getTwitchToken() {
+      let param = $.param({
+        client_id: process.env.TCLIENT_ID,
+        client_secret: process.env.TCLIENT_SECRET,
+        grant_type: 'client_credentials',
+        scope: [
+          'user:read:email',
+          'moderation:read',
+          'channel:manage:broadcast',
+        ]
+      })
+      const { access_token } = await fetch(`https://id.twitch.tv/oauth2/token?${param}`, { method: 'POST' }).then(res => res.json())
+      return await access_token
+  }
+
+  async useTwitchToken() {
+    // twitch functions w/ token here
+  }
+
+  async getAllMods() {
+    return await fetch(`https://tmi.twitch.tv/group/user/${process.env.BOT_NAME}/chatters`).then(res => res.json()).then(res => res.chatters.moderators)
+  }
+
   userinfo() {
     let info = `<div id="user-info">
                   <p>
@@ -41,33 +60,34 @@ export default class extends Controller {
                   </p>
                   <span id="close" data-controller="ban", data-action="click->ban#close">✕</span>
                 </div>`
-    let username = $(this.element).text().slice(0, -2).toLocaleLowerCase()
-    let mod = mods.find(({name}) => name === username)
-    $('#user-info').length == 0 && mod.name === username ? $(this.element).parent().append(info) : $('#user-info').remove()
+    let username = $(this.element).text().toLocaleLowerCase()
+
+    $('#user-info').length == 0 && (username === process.env.BOT_NAME) ? $(this.element).parent().append(info) : $('#user-info').remove()
   }
 
   close() {
     $('#user-info').remove()
   }
 
-  timeout() {
-    let username = $(this.element).parents(1).find('#ch-user').text().slice(0, -2).toLocaleLowerCase()
+  async timeout() {
+    let username = $(this.element).parents(1).find('#ch-user').text().toLocaleLowerCase()
     let duration = $(this.element).attr('id').slice(2)
-    let mod = mods.find(({name}) => name === username)
+    let mods = await this.getAllMods()
+    let mod = mods[0]
 
     switch (duration) {
       case '600':
       case '3600':
       case '86400':
       case '604800':
-        mod.name !== username ? client.timeout(process.env.BOT_NAME, username, duration, 'banned via ASMN') : console.log(`you can't ban another mods!`)
+        mod !== username ? client.timeout(process.env.BOT_NAME, username, duration, 'banned via ASMN') : console.log(`you can't ban another mods!`)
         break
       case 'B':
-        mod.name !== username ? client.ban(process.env.BOT_NAME, username, 'banned via ASMN') : console.log(`you can't ban another mods!`)
+        mod !== username ? client.ban(process.env.BOT_NAME, username, 'banned via ASMN') : console.log(`you can't ban another mods!`)
         break
       case 'D':
         // FIXME(D): for delete message need to know message id
-        mod.name !== username ? client.deletemessage(process.env.BOT_NAME, username) : console.log(`you can't ban another mods!`)
+        // mod !== username ? client.deletemessage(process.env.BOT_NAME, username) : console.log(`you can't ban another mods!`)
         break
     }
   }
