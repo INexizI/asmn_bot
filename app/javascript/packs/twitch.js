@@ -558,11 +558,10 @@
 
     function replaceBadge(b) {
       let badge = '';
-      $.each(Object.keys(b), function(i, n) {
-        const result = getAllBadges.find( ({ name }) => name === n );
+      b === null ? badge = `<img src="https://static.twitchcdn.net/assets/dark-649b4a4625649be7bf30.svg" id="ch-badge">` : $.each(Object.keys(b), function(i, n) {
+        const result = getAllBadges.find(({ name }) => name === n);
         badge += `<img src=${result.link} id="ch-badge">`;
       });
-      // badge += `<img src='/images/slash.svg'>`;
       return badge;
     };
     function replaceElements(e) {
