@@ -1,5 +1,6 @@
 import { Controller } from '@hotwired/stimulus'
 import tmi from 'tmi.js'
+import CryptoJS from "crypto-js"
 
 const twitch_user_id =       process.env.BOT_ID;
 const twitch_user_name =     process.env.BOT_NAME;
@@ -38,39 +39,36 @@ export default class extends Controller {
   }
 
   async userinfo() {
-    let baninfo = (`<div id="user-info">
-                      <p>
-                        <span id="to600" data-controller="ban", data-action="click->ban#timeout">10m</span>
-                        <span id="to3600" data-controller="ban", data-action="click->ban#timeout">1h</span>
-                        <span id="to86400" data-controller="ban", data-action="click->ban#timeout">1d</span>
-                        <span id="to604800" data-controller="ban", data-action="click->ban#timeout">1w</span>
-                        <span id="toB" data-controller="ban", data-action="click->ban#timeout">
-                          <img src="/images/slash.svg" id="ch-badge" title="Ban user">
-                        </span>
-                        <span id="toD" data-controller="ban", data-action="click->ban#timeout">
-                          <img src="/images/slash.svg" id="ch-badge" title="Delete message">
-                        </span>
-                      </p>
-                      <span id="close" data-controller="ban", data-action="click->ban#close">✕</span>
-                    </div>`)
-    let userinfo = (`<div id="user-info">
-                      <p>
-                        <span id="user-pic" data-controller="ban", data-action="click->ban#info">Info</span>
-                      </p>
-                      <span id="close" data-controller="ban", data-action="click->ban#close">✕</span>
-                    </div>`)
+    let info = (`<div id="user-info">
+                  <p>
+                    <span id="user-pic" data-controller="ban" data-action="click->ban#info">Info</span>
+                  </p>
+                  <p>
+                    <span id="to600" data-controller="ban" data-action="click->ban#timeout">10m</span>
+                    <span id="to3600" data-controller="ban" data-action="click->ban#timeout">1h</span>
+                    <span id="to86400" data-controller="ban" data-action="click->ban#timeout">1d</span>
+                    <span id="to604800" data-controller="ban" data-action="click->ban#timeout">1w</span>
+                    <span id="toB" data-controller="ban" data-action="click->ban#timeout">
+                      <img src="/images/slash.svg" id="ch-badge" title="Ban user">
+                    </span>
+                    <span id="toD" data-controller="ban" data-action="click->ban#timeout">
+                      <img src="/images/slash.svg" id="ch-badge" title="Delete message">
+                    </span>
+                  </p>
+                  <span id="close" data-controller="ban" data-action="click->ban#close">✕</span>
+                </div>`)
     let username = $(this.element).text().toLocaleLowerCase()
     let x = await this.getAllMods()
     let mod = x.find(({ name }) => name === username)
 
     switch (username) {
       case twitch_user_name:
-      case mod.name:
-        $('#user-info').length == 0 ? $(this.element).parent().append(userinfo) : $('#user-info').remove()
+      case process.env.TEST_TEST:
+        $('#user-info').length == 0 ? $(this.element).parent().append(info) : $('#user-info').remove()
         break
       default:
         console.log(`User`)
-        $('#user-info').length == 0 ? $(this.element).parent().append(baninfo) : $('#user-info').remove()
+        $('#user-info').length == 0 ? $(this.element).parent().append(info) : $('#user-info').remove()
     }
   }
 
@@ -82,10 +80,14 @@ export default class extends Controller {
   }
 
   async timeout() {
+    let encryptData = $(this.element).parents(1).prev('#ch-user').attr('data-target')
+    let bytes = CryptoJS.AES.decrypt(encryptData, process.env.CRYPTO_KEY)
+    let msgID = bytes.toString(CryptoJS.enc.Utf8)
+
     let username = $(this.element).parents(1).find('#ch-user').text().toLocaleLowerCase()
     let duration = $(this.element).attr('id').slice(2)
-    let x = await this.getAllMods()
-    let mod = x.find(({ name }) => name === username)
+    // let x = await this.getAllMods()
+    // let mod = x.find(({ name }) => name === username)
 
     switch (duration) {
       case '600':
@@ -102,7 +104,7 @@ export default class extends Controller {
       case 'D':
         // FIXME(D): for delete message need to know message id
         console.log(`Message Deleted by ASMN`)
-        // client.deletemessage(process.env.BOT_NAME, username)
+        // client.deletemessage(process.env.BOT_NAME, msgID)
         break
     }
   }

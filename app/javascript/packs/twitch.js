@@ -2,6 +2,7 @@
   $(document).on("turbolinks:load", function() {
     const queryString = require('query-string')
     const Buffer = require('buffer/').Buffer
+    const CryptoJS = require("crypto-js")
 
     /* CREDENTIALS */
     const twitch_user_id =            process.env.BOT_ID;
@@ -14,14 +15,16 @@
     const spotify_client_id_alt =     process.env.SCLIENT_ID_ALT;
     const spotify_client_secret_alt = process.env.SCLIENT_SECRET_ALT;
     const spotify_refresh_token_alt = process.env.SREFRESH_TOKEN_ALT;
+    const crypto_key =                process.env.CRYPTO_KEY;
+    const crypto_iv =                 process.env.CRYPTO_IV;
 
     const basic = Buffer.from(`${spotify_client_id}:${spotify_client_secret}`).toString('base64');
     // const basic = Buffer.from(`${spotify_client_id_alt}:${spotify_client_secret_alt}`).toString('base64');
     const sleep = ms => new Promise(res => setTimeout(() => res(), ms));
     const regexpCommand = new RegExp(/^!([a-zA-Z0-9]+)(?:\W+)?(.*)?/);
-    const prefix = '#';
     let skip_count = 0;
     let announceCount = 0;
+
     // array of all:
     let getAllEmotes;     // emotes
     let getAllBadges;     // badges
@@ -76,6 +79,10 @@
     const REPEAT_MODE =          'https://api.spotify.com/v1/me/player/repeat';             // put
     const VOLUME =               'https://api.spotify.com/v1/me/player/volume';             // put
     const RECENTLY_PLAY =        'https://api.spotify.com/v1/me/player/recently-played';    // get
+
+    /* CONST VARIABLE CONFIG */
+    const PREFIX = '#';
+    const MESSAGE_LIMIT = 10;
 
     /* EMOTES CONFIG */
     const iconConfig = {
@@ -457,7 +464,7 @@
             client.action(channel, `GitHub: ${process.env.GITHUB}`);
             break;
         }
-      } else if (messageType === prefix) {
+      } else if (messageType === PREFIX) {
         let soundCommand = msg.substring(1);
         let audio = new Audio(`/sounds/${soundCommand}.wav`);
         // audio.autoplay = true;
@@ -541,6 +548,8 @@
       <span><img src=${profile_image_url} id="ch-user-pic"></span>
       */
 
+      const cryptData = CryptoJS.AES.encrypt(tags.id, crypto_key).toString();
+
       const b = replaceBadge(tags.badges);
       const e = replaceElements(r);
 
@@ -548,7 +557,7 @@
           <div id="ch-block">
             <p id="user-badge">${b}</p>
             <p id="user-name">
-              <span style="color: ${tags.color}" id="ch-user" data-controller="ban", data-action="click->ban#userinfo" }>${tags['display-name']}</span>
+              <span style="color: ${tags.color}" id="ch-user" data-controller="ban" data-action="click->ban#userinfo" data-target="${cryptData}">${tags['display-name']}</span>
             </p>
             <span id="ch-msg">${e}</span>
           </div>`)
@@ -609,7 +618,7 @@
     function clearChat() {
       let msg_limit = $('.chat div').length;
       let msg_first = $('.chat').children(':first');
-      if (msg_limit > 5)
+      if (msg_limit > MESSAGE_LIMIT)
         msg_first.remove();
     };
 
