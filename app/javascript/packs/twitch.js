@@ -4,98 +4,21 @@
     const Buffer = require('buffer/').Buffer
     const CryptoJS = require("crypto-js")
 
-    /* CREDENTIALS */
-    const twitch_user_id =            process.env.BOT_ID;
-    const twitch_user_name =          process.env.BOT_NAME;
-    const twitch_client_id =          process.env.TCLIENT_ID;
-    const twitch_client_secret =      process.env.TCLIENT_SECRET;
-    const spotify_client_id =         process.env.SCLIENT_ID;
-    const spotify_client_secret =     process.env.SCLIENT_SECRET;
-    const spotify_refresh_token =     process.env.SREFRESH_TOKEN;
-    const spotify_client_id_alt =     process.env.SCLIENT_ID_ALT;
-    const spotify_client_secret_alt = process.env.SCLIENT_SECRET_ALT;
-    const spotify_refresh_token_alt = process.env.SREFRESH_TOKEN_ALT;
-    const crypto_key =                process.env.CRYPTO_KEY;
-    const crypto_iv =                 process.env.CRYPTO_IV;
+    const { CREDENTIALS, TWITCH, SPOTIFY, MESSAGE, BOT_CONFIG, EMOTES, SOUND_COMMAND, BAN_LIST, CHAT_BAN_PHRASE, ANNOUNCE_LIST, SITE_WHITELIST } = require('../config');
 
-    const basic = Buffer.from(`${spotify_client_id}:${spotify_client_secret}`).toString('base64');
-    // const basic = Buffer.from(`${spotify_client_id_alt}:${spotify_client_secret_alt}`).toString('base64');
+    const basic = Buffer.from(`${CREDENTIALS.spotify_client_id}:${CREDENTIALS.spotify_client_secret}`).toString('base64');
     const sleep = ms => new Promise(res => setTimeout(() => res(), ms));
     const regexpCommand = new RegExp(/^!([a-zA-Z0-9]+)(?:\W+)?(.*)?/);
-    let skip_count = 0;
     let announceCount = 0;
-
-    // array of all:
-    let getAllEmotes;     // emotes
-    let getAllBadges;     // badges
-    let banWords = [      // ban-words
-      { name: 'qwe', reason: 'qwe' },
-      { name: 'asd', reason: 'asd' },
-      { name: 'zxc', reason: 'zxc' }
-    ];
-    let banPhrases = [    // ban phrases
-      { id: 1, text: 'Is permanently banned from this channel' },
-      { id: 2, text: 'disintegrated' },
-      /*
-      { id: 3, text: 'var 3' },
-      ...
-      add more vars
-      */
-    ];
-    let announceList = [  // announce messages
-      { text: 'qwe!' },
-      { text: 'asd!' },
-      { text: 'zxc!' }
-    ];
-    let siteWhiteList = [
-      { id: 1, name: 'YouTube', link: 'www.youtube.com' },
-      { id: 2, name: 'YouTube', link: 'youtu.be' },
-      { id: 3, name: 'Imgur', link: 'imgur.com' },
-      { id: 4, name: 'GitHub', link: 'github.com' }
-    ];
-
-    /* ENDPOINTS */
-    const TWITCH_TOKEN =         'https://id.twitch.tv/oauth2/token';
-    const TWITCH_USER =          'https://api.twitch.tv/helix/users';
-    const TWITCH_FOLLOW =        'https://api.twitch.tv/helix/users/follows';
-    const TWITCH_CHANNEL =       'https://api.twitch.tv/helix/channels';
-    const TWITCH_BADGES_GLOBAL = 'https://api.twitch.tv/helix/chat/badges/global';
-    const TWITCH_BADGES =        'https://api.twitch.tv/helix/chat/badges';
-    const TWITCH_EMOTES_GLOBAL = 'https://api.twitch.tv/helix/chat/emotes/global';
-    const TWITCH_EMOTES =        'https://api.twitch.tv/helix/chat/emotes';
-    const TWITCH_EMOTES_SET =    'https://api.twitch.tv/helix/chat/emotes/set';
-    const TWITCH_POLL =          'https://api.twitch.tv/helix/polls';
-    const TWITCH_PREDICTIONS =   'https://api.twitch.tv/helix/predictions';
-    const TWITCH_BAN =           'https://api.twitch.tv/helix/moderation/bans';
-
-    const AUTHORIZE =            'https://accounts.spotify.com/authorize';
-    const TOKEN_ENDPOINT =       'https://accounts.spotify.com/api/token';
-    const PLAYBACK_STATE =       'https://api.spotify.com/v1/me/player';                    // get
-    const PREVIOUS_SONG =        'https://api.spotify.com/v1/me/player/previous';           // post
-    const NEXT_SONG =            'https://api.spotify.com/v1/me/player/next';               // post
-    const PAUSE_SONG =           'https://api.spotify.com/v1/me/player/pause';              // put
-    const PLAY_SONG =            'https://api.spotify.com/v1/me/player/play';               // put
-    const SHUFFLE_SONG =         'https://api.spotify.com/v1/me/player/shuffle';            // put
-    const REPEAT_MODE =          'https://api.spotify.com/v1/me/player/repeat';             // put
-    const VOLUME =               'https://api.spotify.com/v1/me/player/volume';             // put
-    const RECENTLY_PLAY =        'https://api.spotify.com/v1/me/player/recently-played';    // get
-
-    /* CONST VARIABLE CONFIG */
-    const PREFIX = '#';
-    const MESSAGE_LIMIT = 10;
-
-    /* EMOTES CONFIG */
-    const iconConfig = {
-      format: 'static',   // [static, animated]
-      scale:  '1.0',      // [1.0, 2.0, 3.0]
-      theme:  'dark'      // [light, dark]
-    };
+    let skip_count = 0;
+    let getAllEmotes;
+    let getAllBadges;
 
     /* TWITCH API */
     const getTwitchToken = async () => {
       let param = $.param({
-        client_id: twitch_client_id,
-        client_secret: twitch_client_secret,
+        client_id: CREDENTIALS.twitch_client_id,
+        client_secret: CREDENTIALS.twitch_client_secret,
         grant_type: 'client_credentials',
         scope: [
           'user:read:email',
@@ -105,7 +28,7 @@
           'channel:manage:predictions'
         ]
       });
-      let url = `${TWITCH_TOKEN}?${param}`
+      let url = `${TWITCH.token}?${param}`
       const response = await fetch(url, {
         method: 'POST',
       });
@@ -117,14 +40,14 @@
       return fetch(`${url}?${param}`, {
         headers: {
           Authorization: `Bearer ${access_token}`,
-          'Client-Id': twitch_client_id,
+          'Client-Id': CREDENTIALS.twitch_client_id,
         },
       });
     };
 
     /* SPOTIFY API */
     const getAccessToken = async () => {
-      const response = await fetch(TOKEN_ENDPOINT, {
+      const response = await fetch(SPOTIFY.token, {
         method: 'POST',
         headers: {
           Authorization: `Basic ${basic}`,
@@ -132,7 +55,7 @@
         },
         body: queryString.stringify({
           grant_type: 'refresh_token',
-          refresh_token: spotify_refresh_token
+          refresh_token: CREDENTIALS.spotify_refresh_token
         }),
       });
 
@@ -140,7 +63,7 @@
     };
     const getPlaybackState = async () => {
       const { access_token } = await getAccessToken();
-      return fetch(PLAYBACK_STATE, {
+      return fetch(SPOTIFY.playback_state, {
         headers: {
           Authorization: `Bearer ${access_token}`,
         },
@@ -148,7 +71,7 @@
     };
     const shuffleSong = async (param) => {
       const { access_token } = await getAccessToken();
-      return fetch(`${SHUFFLE_SONG}?state=${param}`, {
+      return fetch(`${SPOTIFY.shuffle}?state=${param}`, {
         method: 'PUT',
         headers: {
           Authorization: `Bearer ${access_token}`,
@@ -157,7 +80,7 @@
     };
     const repeatSong = async (param) => {
       const { access_token } = await getAccessToken();
-      return fetch(`${REPEAT_MODE}?state=${param}`, {
+      return fetch(`${SPOTIFY.repeat}?state=${param}`, {
         method: 'PUT',
         headers: {
           Authorization: `Bearer ${access_token}`,
@@ -166,7 +89,7 @@
     };
     const prevSong = async () => {
       const { access_token } = await getAccessToken()
-      return fetch(PREVIOUS_SONG, {
+      return fetch(SPOTIFY.previous, {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${access_token}`,
@@ -175,7 +98,7 @@
     };
     const nextSong = async () => {
       const { access_token } = await getAccessToken();
-      return fetch(NEXT_SONG, {
+      return fetch(SPOTIFY.next, {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${access_token}`,
@@ -184,7 +107,7 @@
     };
     const pauseSong = async () => {
       const { access_token } = await getAccessToken();
-      return fetch(PAUSE_SONG, {
+      return fetch(SPOTIFY.pause, {
         method: 'PUT',
         headers: {
           Authorization: `Bearer ${access_token}`,
@@ -193,7 +116,7 @@
     };
     const playSong = async () => {
       const { access_token } = await getAccessToken();
-      return fetch(PLAY_SONG, {
+      return fetch(SPOTIFY.play, {
         method: 'PUT',
         headers: {
           Authorization: `Bearer ${access_token}`,
@@ -202,7 +125,7 @@
     };
     const volumeSong = async (param) => {
       const { access_token } = await getAccessToken();
-      return fetch(`${VOLUME}?volume_percent=${param}`, {
+      return fetch(`${SPOTIFY.volume}?volume_percent=${param}`, {
         method: 'PUT',
         headers: {
           Authorization: `Bearer ${access_token}`,
@@ -299,46 +222,7 @@
       getPlaybackState().then(res => res.status === 200 ? check_states() : ''), 15000);
     console.log('Spotify API');
 
-    /* BOT CONNECTION */
-    const config = {
-      options: { debug: true },
-      connection: {
-        cluster: 'aws',
-        reconnect: true,
-        secure: true,
-        timeout: 180000,
-        reconnectDecay: 1.4,
-        reconnectInterval: 1000
-      },
-      channels: [ twitch_user_name ],
-      identity: {
-        username: twitch_user_name,
-        password: process.env.BOT_PASSWORD,
-      }
-    }
-    // const commands = {
-    //   bot: {
-    //     response: (user) =>
-    //       `@${user}, KonCha`
-    //   },
-    //   roll: {
-    //     response: (user) =>
-    //       `@${user} roll: [ ${Math.floor(Math.random() * 100) + 1} ]`
-    //   },
-    //   dice: {
-    //     response: (user) =>
-    //       `@${user} dice: [ ${Math.floor(Math.random() * 6) + 1} ]`
-    //   },
-    //   github: {
-    //     response: process.env.GITHUB
-    //   },
-    // }
-    const allSound = {
-      // <COMMAND_NAME_1>: '/sounds/<FILE_NAME_1>.wav',
-      // <COMMAND_NAME_2>: '/sounds/<FILE_NAME_2>.wav',
-    }
-
-    const client = new tmi.Client(config)
+    const client = new tmi.Client(BOT_CONFIG)
     client.connect().catch(console.error)
 
     /* EVENTS */
@@ -390,7 +274,6 @@
 
       if (messageType === '!') {
         const [raw, command, argument] = msg.match(regexpCommand);
-        /* switch/case caommands */
         switch (command) {
           /* --- Spotify --- */
           case 'song':
@@ -446,7 +329,7 @@
             client.ping().then(data => client.action(channel, `@${tags.username}, your ping is ${Math.floor(Math.round(data*1000))}ms`));
             break;
           case 'ban':
-            client.action(channel, `${argument} ${banPhrases[(Math.floor(Math.random() * banPhrases.length))].text}`);
+            client.action(channel, `${argument} ${CHAT_BAN_PHRASE[(Math.floor(Math.random() * CHAT_BAN_PHRASE.length))].text}`);
             break;
           case 'time':
             banUser(client, channel, argument);
@@ -454,7 +337,7 @@
           /* --- Sound commands --- */
           case 'sound':
             let x = 'Sound commands:';
-            $.each(allSound, function(i, n) {
+            $.each(SOUND_COMMAND, function(i, n) {
               x += ` #${i}`;
             });
             client.action(channel, x);
@@ -464,7 +347,7 @@
             client.action(channel, `GitHub: ${process.env.GITHUB}`);
             break;
         }
-      } else if (messageType === PREFIX) {
+      } else if (messageType === MESSAGE.prefix) {
         let soundCommand = msg.substring(1);
         let audio = new Audio(`/sounds/${soundCommand}.wav`);
         // audio.autoplay = true;
@@ -488,48 +371,32 @@
       console.log(`Bot Disconnected: ${reason}`)
     };
     function onHostedHandler (channel, username, viewers, autohost) {
-      client.say(channel,
-        `Thank you @${username} for the host of ${viewers}!`
-      )
+      client.say(channel, `Thank you @${username} for the host of ${viewers}!`)
     };
     function onRaidedHandler(channel, username, viewers) {
-      client.say(channel,
-        `Thank you @${username} for the raid of ${viewers}!`
-      )
+      client.say(channel, `Thank you @${username} for the raid of ${viewers}!`)
     };
     function onSubscriptionHandler(channel, username, method, message, tags) {
-      client.say(channel,
-        `Thank you @${username} for subscribing!`
-      )
+      client.say(channel, `Thank you @${username} for subscribing!`)
     };
     function onCheerHandler(channel, tags, message)  {
-      client.say(channel,
-        `Thank you @${tags.username} for the ${tags.bits} bits!`
-      )
+      client.say(channel, `Thank you @${tags.username} for the ${tags.bits} bits!`)
     };
     function onGiftPaidUpgradeHandler(channel, username, sender, tags) {
-      client.say(channel,
-        `Thank you @${username} for continuing your gifted sub!`
-      )
+      client.say(channel, `Thank you @${username} for continuing your gifted sub!`)
     };
     function onHostingHandler(channel, target, viewers) {
-      client.say(channel,
-        `We are now hosting ${target} with ${viewers} viewers!`
-      )
+      client.say(channel, `We are now hosting ${target} with ${viewers} viewers!`)
     };
     function reconnectHandler() {
       console.log('Reconnecting...')
     };
     function resubHandler(channel, username, months, message, tags, methods) {
       const cumulativeMonths = tags['msg-param-cumulative-months']
-      client.say(channel,
-        `Thank you @${username} for the ${cumulativeMonths} sub!`
-      )
+      client.say(channel, `Thank you @${username} for the ${cumulativeMonths} sub!`)
     };
     function subGiftHandler(channel, username, streakMonths, recipient, methods, tags) {
-      client.say(channel,
-        `Thank you @${username} for gifting a sub to ${recipient}}.`
-      )
+      client.say(channel, `Thank you @${username} for gifting a sub to ${recipient}}.`)
 
       // this comes back as a boolean from twitch, disabling for now
       // "msg-param-sender-count": false
@@ -548,7 +415,7 @@
       <span><img src=${profile_image_url} id="ch-user-pic"></span>
       */
 
-      const cryptData = CryptoJS.AES.encrypt(tags.id, crypto_key).toString();
+      const cryptData = CryptoJS.AES.encrypt(tags.id, CREDENTIALS.crypto_key).toString();
 
       const b = replaceBadge(tags.badges);
       const e = replaceElements(r);
@@ -577,7 +444,7 @@
       let m = [];
       $.each(e.split(' '), function(i, n) {
         let urlCheck = n.split('/')[2];
-        const checkWL = siteWhiteList.find(({link}) => link === urlCheck);
+        const checkWL = SITE_WHITELIST.find(({link}) => link === urlCheck);
         const emote = getAllEmotes.find(({ name }) => name === n);
         if (emote)
           m.push(`<img src=${emote.link} id="ch-emote">`);
@@ -610,7 +477,7 @@
     function banCheck(w) {
       let c = false;
       $.each(w.split(' '), function(i, n) {
-        const ban = banWords.find(({name}) => name === n);
+        const ban = BAN_LIST.find(({name}) => name === n);
         if (ban != undefined) c = true;
       });
       return c;
@@ -618,13 +485,13 @@
     function clearChat() {
       let msg_limit = $('.chat div').length;
       let msg_first = $('.chat').children(':first');
-      if (msg_limit > MESSAGE_LIMIT)
+      if (msg_limit > MESSAGE.limit)
         msg_first.remove();
     };
 
     function announceMessage(client, channel) {
-      if (announceCount != announceList.length) {
-        client.say(channel, `/announce ${announceList[announceCount].text}`);
+      if (announceCount != ANNOUNCE_LIST.length) {
+        client.say(channel, `/announce ${ANNOUNCE_LIST[announceCount].text}`);
         announceCount++;
       } else
         announceCount = 0;
@@ -636,15 +503,15 @@
         login: user
       });
 
-      return await useTwitchToken(TWITCH_USER, param).then(res => res.json()).then(res => res.data[0]);
+      return await useTwitchToken(TWITCH.user, param).then(res => res.json()).then(res => res.data[0]);
     };
     async function getUserFollowTime(client, tags, channel) {
       let param = $.param({
-        to_id: twitch_user_id,
+        to_id: CREDENTIALS.twitch_user_id,
         from_login: tags.username
       });
 
-      const x = await useTwitchToken(TWITCH_FOLLOW, param).then(res => res.json()).then(res => res.data[0].followed_at);
+      const x = await useTwitchToken(TWITCH.follow, param).then(res => res.json()).then(res => res.data[0].followed_at);
       const date = new Date(x.split('T').shift());
       const options = {
         // weekday: 'short',          // long, short, narrow
@@ -663,7 +530,7 @@
     //     from_login: tags.username
     //   });
     //
-    //   let t = await useTwitchToken(TWITCH_FOLLOW, param).then(res => res.json()).then(res => res.data[0].followed_at);
+    //   let t = await useTwitchToken(TWITCH.follow, param).then(res => res.json()).then(res => res.data[0].followed_at);
     //   let n = new Date().getTime();
     //   let f = (n - Date.parse(t));
     //   let year, month, day, hour, minute, second;
@@ -684,31 +551,31 @@
     //   return q;
     // };
     async function getBadgesGlobal(client, message, tags, channel, self) {
-      return await useTwitchToken(TWITCH_BADGES_GLOBAL).then(res => res.json()).then(res => res.data);
+      return await useTwitchToken(TWITCH.badges_global).then(res => res.json()).then(res => res.data);
     };
     async function getChannelBadges(client, message, tags, channel, self) {
       const param = $.param({
-        broadcaster_id: twitch_user_id,
+        broadcaster_id: CREDENTIALS.twitch_user_id,
       });
 
-      return await useTwitchToken(TWITCH_BADGES, param).then(res => res.json()).then(res => res.data);
+      return await useTwitchToken(TWITCH.badges, param).then(res => res.json()).then(res => res.data);
     };
     async function getEmotesGlobal(client, message, tags, channel, self) {
-      return await useTwitchToken(TWITCH_EMOTES_GLOBAL).then(res => res.json()).then(res => res.data);
+      return await useTwitchToken(TWITCH.emotes_global).then(res => res.json()).then(res => res.data);
     };
     async function getChannelEmotes(client, message, tags, channel, self) {
       const param = $.param({
-        broadcaster_id: twitch_user_id,
+        broadcaster_id: CREDENTIALS.twitch_user_id,
       });
 
-      return await useTwitchToken(TWITCH_EMOTES, param).then(res => res.json()).then(res => res.data);
+      return await useTwitchToken(TWITCH.emotes, param).then(res => res.json()).then(res => res.data);
     };
     async function getChannelEmotesSet(client, message, tags, channel, self) {
       return client.emotesets;
     };
     async function getStreamInfo(client, message, tags, channel, self) {
       const param = $.param({
-        broadcaster_id: twitch_user_id,
+        broadcaster_id: CREDENTIALS.twitch_user_id,
       });
 
       return useTwitchToken(TWITCH_CHANNEL, param).then(res => res.json()).then(res => res.data[0]);
@@ -719,18 +586,18 @@
       client.timeout(channel, userData.login, 10, 'banned via ASMN');
     };
 
-    useTwitchToken(TWITCH_EMOTES_GLOBAL).then(res => res.json()).then(res => {
+    useTwitchToken(TWITCH.emotes_global).then(res => res.json()).then(res => {
       let x = [];
       $.each(res.data, function(i, n) {
         x.push({
           id: n.id,
           name: n.name,
-          link: `https://static-cdn.jtvnw.net/emoticons/v2/${n.id}/${iconConfig.format}/${iconConfig.theme}/${iconConfig.scale}`
+          link: `https://static-cdn.jtvnw.net/emoticons/v2/${n.id}/${EMOTES.format}/${EMOTES.theme}/${EMOTES.scale}`
         });
       });
       getAllEmotes = x;
     });
-    useTwitchToken(TWITCH_BADGES_GLOBAL).then(res => res.json()).then(res => {
+    useTwitchToken(TWITCH.badges_global).then(res => res.json()).then(res => {
       let x = [];
       $.each(res.data, function(i, n) {
         if (n.versions.length == 1)

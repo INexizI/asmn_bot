@@ -2,35 +2,14 @@ import { Controller } from '@hotwired/stimulus'
 import tmi from 'tmi.js'
 import CryptoJS from "crypto-js"
 
-const twitch_user_id =       process.env.BOT_ID;
-const twitch_user_name =     process.env.BOT_NAME;
-const twitch_user_pass =     process.env.BOT_PASSWORD;
-const twitch_client_id =     process.env.TCLIENT_ID;
-const twitch_client_secret = process.env.TCLIENT_SECRET;
-
-const config = {
-  options: { debug: true },
-  connection: {
-    cluster: 'aws',
-    reconnect: true,
-    secure: true,
-    timeout: 180000,
-    reconnectDecay: 1.4,
-    reconnectInterval: 1000
-  },
-  channels: [ twitch_user_name ],
-  identity: {
-    username: twitch_user_name,
-    password: twitch_user_pass,
-  }
-}
-const client = new tmi.Client(config)
+const { CREDENTIALS, BOT_CONFIG } = require('../config');
+const client = new tmi.Client(BOT_CONFIG)
 client.connect()
 
 export default class extends Controller {
   async getAllMods() {
     let x = []
-    await fetch(`https://tmi.twitch.tv/group/user/${twitch_user_name}/chatters`).then(res => res.json()).then(res => {
+    await fetch(`https://tmi.twitch.tv/group/user/${CREDENTIALS.twitch_user_name}/chatters`).then(res => res.json()).then(res => {
       $.each(res.chatters.moderators, (i, n) => {
         x.push({ name: n })
       })
@@ -62,7 +41,7 @@ export default class extends Controller {
     let mod = x.find(({ name }) => name === username)
 
     switch (username) {
-      case twitch_user_name:
+      case CREDENTIALS.twitch_user_name:
       case process.env.TEST_TEST:
         $('#user-info').length == 0 ? $(this.element).parent().append(info) : $('#user-info').remove()
         break
@@ -81,13 +60,13 @@ export default class extends Controller {
 
   async timeout() {
     let encryptData = $(this.element).parents(1).prev('#ch-user').attr('data-target')
-    let bytes = CryptoJS.AES.decrypt(encryptData, process.env.CRYPTO_KEY)
+    let bytes = CryptoJS.AES.decrypt(encryptData, CREDENTIALS.crypto_key)
     let msgID = bytes.toString(CryptoJS.enc.Utf8)
 
     let username = $(this.element).parents(1).find('#ch-user').text().toLocaleLowerCase()
     let duration = $(this.element).attr('id').slice(2)
-    // let x = await this.getAllMods()
-    // let mod = x.find(({ name }) => name === username)
+    let x = await this.getAllMods()
+    let mod = x.find(({ name }) => name === username)
 
     switch (duration) {
       case '600':
