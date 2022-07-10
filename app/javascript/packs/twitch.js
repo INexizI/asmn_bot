@@ -4,15 +4,18 @@
     const Buffer = require('buffer/').Buffer
     const CryptoJS = require("crypto-js")
 
-    const { CREDENTIALS, TWITCH, SPOTIFY, MESSAGE, BOT_CONFIG, EMOTES, SOUND_COMMAND, BAN_LIST, CHAT_BAN_PHRASE, ANNOUNCE_LIST, SITE_WHITELIST } = require('../config');
+    const { CREDENTIALS, TWITCH, SPOTIFY, SMILE, MESSAGE, BOT_CONFIG, EMOTES, SOUND_COMMAND, BAN_LIST, CHAT_BAN_PHRASE, ANNOUNCE_LIST, SITE_WHITELIST } = require('./config');
 
     const basic = Buffer.from(`${CREDENTIALS.spotify_client_id}:${CREDENTIALS.spotify_client_secret}`).toString('base64');
     const sleep = ms => new Promise(res => setTimeout(() => res(), ms));
     const regexpCommand = new RegExp(/^!([a-zA-Z0-9]+)(?:\W+)?(.*)?/);
     let announceCount = 0;
     let skip_count = 0;
-    let getAllEmotes;
     let getAllBadges;
+    let getAllEmotes;
+    let getAllBttvEmotes;
+    let getAllBttvChannelEmotes;
+    let getAllFfzChannelEmotes;
 
     /* TWITCH API */
     const getTwitchToken = async () => {
@@ -170,6 +173,7 @@
       }
     };
 
+    /* SPOTIFY BUTTONS */
     function check_states() {
       getPlaybackState().then(res => res.json()).then(res => {
         res.is_playing === true ? $('#btn-p img').attr('src', '/images/pause.svg') : $('#btn-p img').attr('src', '/images/play.svg');
@@ -222,6 +226,7 @@
       getPlaybackState().then(res => res.status === 200 ? check_states() : ''), 15000);
     console.log('Spotify API');
 
+    /* BOT CONNECTION */
     const client = new tmi.Client(BOT_CONFIG)
     client.connect().catch(console.error)
 
@@ -331,9 +336,6 @@
           case 'ban':
             client.action(channel, `${argument} ${CHAT_BAN_PHRASE[(Math.floor(Math.random() * CHAT_BAN_PHRASE.length))].text}`);
             break;
-          case 'time':
-            banUser(client, channel, argument);
-            break;
           /* --- Sound commands --- */
           case 'sound':
             let x = 'Sound commands:';
@@ -442,10 +444,11 @@
     };
     function replaceElements(e) {
       let m = [];
+      let emotes = [].concat(getAllEmotes, getAllBttvEmotes, getAllBttvChannelEmotes, getAllFfzChannelEmotes);
       $.each(e.split(' '), function(i, n) {
         let urlCheck = n.split('/')[2];
         const checkWL = SITE_WHITELIST.find(({link}) => link === urlCheck);
-        const emote = getAllEmotes.find(({ name }) => name === n);
+        const emote = emotes.find(({ name }) => name === n);
         if (emote)
           m.push(`<img src=${emote.link} id="ch-emote">`);
         else if (checkWL)
@@ -580,10 +583,10 @@
 
       return useTwitchToken(TWITCH_CHANNEL, param).then(res => res.json()).then(res => res.data[0]);
     };
-    async function banUser(client, channel, user) {
+    async function banUser(client, channel, user, duration) {
       const userData = await getUserInfo(user);
 
-      client.timeout(channel, userData.login, 10, 'banned via ASMN');
+      client.timeout(channel, userData.login, duration, 'banned via ASMN');
     };
 
     useTwitchToken(TWITCH.emotes_global).then(res => res.json()).then(res => {
@@ -615,268 +618,289 @@
       getAllBadges = x;
     });
 
-    /* example code */
-    function parseMessage(message) {
-      // Contains the component parts.
-      let parsedMessage = {
-        tags: null,
-        source: null,
-        command: null,
-        parameters: null
-      };
-
-      // The start index. Increments as we parse the IRC message.
-      let idx = 0;
-
-      // The raw components of the IRC message.
-      let rawTagsComponent = null;
-      let rawSourceComponent = null;
-      let rawCommandComponent = null;
-      let rawParametersComponent = null;
-
-      // If the message includes tags, get the tags component of the IRC message.
-      // The message includes tags.
-      if (message[idx] === '@') {
-        let endIdx = message.indexOf(' ');
-        rawTagsComponent = message.slice(1, endIdx);
-        // Should now point to source colon (:).
-        idx = endIdx + 1;
-      };
-
-      // Get the source component (nick and host) of the IRC message.
-      // The idx should point to the source part; otherwise, it's a PING command.
-      if (message[idx] === ':') {
-        idx += 1;
-        let endIdx = message.indexOf(' ', idx);
-        rawSourceComponent = message.slice(idx, endIdx);
-        // Should point to the command part of the message.
-        idx = endIdx + 1;
-      };
-
-      // Get the command component of the IRC message.
-      // Looking for the parameters part of the message.
-      // But not all messages include the parameters part.
-      let endIdx = message.indexOf(':', idx);
-      if (-1 == endIdx)
-        endIdx = message.length;
-
-      rawCommandComponent = message.slice(idx, endIdx).trim();
-
-      // Get the parameters component of the IRC message.
-      // Check if the IRC message contains a parameters component.
-      // Should point to the parameters part of the message.
-      if (endIdx != message.length) {
-        idx = endIdx + 1;
-        rawParametersComponent = message.slice(idx);
-      };
-
-      // Parse the command component of the IRC message.
-      parsedMessage.command = parseCommand(rawCommandComponent);
-
-      // Only parse the rest of the components if it's a command
-      // we care about; we ignore some messages.
-      // Is null if it's a message we don't care about.
-      if (null == parsedMessage.command)
-        return null;
-      else {
-        // The IRC message contains tags.
-        if (null != rawTagsComponent)
-          parsedMessage.tags = parseTags(rawTagsComponent);
-
-        parsedMessage.source = parseSource(rawSourceComponent);
-
-        parsedMessage.parameters = rawParametersComponent;
-        if (rawParametersComponent && rawParametersComponent[0] === '!')
-          parsedMessage.command = parseParameters(rawParametersComponent, parsedMessage.command); // The user entered a bot command in the chat window.
-      }
-
-      return parsedMessage;
-    };
-    // Parses the tags component of the IRC message.
-    function parseTags(tags) {
-      // badge-info=;badges=broadcaster/1;color=#0000FF;...
-
-      // List of tags to ignore.
-      const tagsToIgnore = {
-        'client-nonce': null,
-        'flags': null
-      };
-
-      // Holds the parsed list of tags.
-      // The key is the tag's name (e.g., color).
-      let dictParsedTags = {};
-
-      let parsedTags = tags.split(';');
-
-      parsedTags.forEach(tag => {
-        // Tags are key/value pairs.
-        let parsedTag = tag.split('=');
-        let tagValue = (parsedTag[1] === '') ? null : parsedTag[1];
-
-          // Switch on tag name
-          switch (parsedTag[0]) {
-            case 'badges':
-            case 'badge-info':
-              // badges=staff/1,broadcaster/1,turbo/1;
-              if (tagValue) {
-                let dict = {};  // Holds the list of badge objects.
-                                // The key is the badge's name (e.g., subscriber).
-                let badges = tagValue.split(',');
-                badges.forEach(pair => {
-                  let badgeParts = pair.split('/');
-                  dict[badgeParts[0]] = badgeParts[1];
-                })
-                dictParsedTags[parsedTag[0]] = dict;
-              } else
-                dictParsedTags[parsedTag[0]] = null;
-              break;
-
-            case 'emotes':
-              // emotes=25:0-4,12-16/1902:6-10
-              if (tagValue) {
-                let dictEmotes = {};  // Holds a list of emote objects.
-                                      // The key is the emote's ID.
-                let emotes = tagValue.split('/');
-                emotes.forEach(emote => {
-                  let emoteParts = emote.split(':');
-
-                  let textPositions = [];  // The list of position objects that identify
-                                           // the location of the emote in the chat message.
-                  let positions = emoteParts[1].split(',');
-                  positions.forEach(position => {
-                    let positionParts = position.split('-');
-                    textPositions.push({
-                      startPosition: positionParts[0],
-                      endPosition: positionParts[1]
-                    })
-                  });
-                  dictEmotes[emoteParts[0]] = textPositions;
-                })
-                dictParsedTags[parsedTag[0]] = dictEmotes;
-              } else
-                dictParsedTags[parsedTag[0]] = null;
-              break;
-            case 'emote-sets':
-              // emote-sets=0,33,50,237
-              let emoteSetIds = tagValue.split(',');  // Array of emote set IDs.
-              dictParsedTags[parsedTag[0]] = emoteSetIds;
-              break;
-            default:
-              // If the tag is in the list of tags to ignore, ignore
-              // it; otherwise, add it.
-              if (tagsToIgnore.hasOwnProperty(parsedTag[0]))
-                ;
-              else
-                dictParsedTags[parsedTag[0]] = tagValue;
-          }
+    function replaceEmotes(data, type, scale) {
+      let x = [];
+      $.each(data, function(i, n) {
+        x.push({
+          id: n.id,
+          name: n.code,
+          link: `https://cdn.${type}/emote/${n.id}/${scale}`
+        });
       });
-
-      return dictParsedTags;
+      return x;
     };
-    // Parses the command component of the IRC message.
-    function parseCommand(rawCommandComponent) {
-      let parsedCommand = null;
-      let commandParts = rawCommandComponent.split(' ');
+    fetch(SMILE.bttv_global).then(res => res.json()).then(res => {
+      getAllBttvEmotes = replaceEmotes(res, 'betterttv.net', '1x');
+    });
+    fetch(`${SMILE.bttv_channel}/${CREDENTIALS.twitch_user_id}`).then(res => res.json()).then(res => {
+      getAllBttvChannelEmotes = replaceEmotes(res.sharedEmotes, 'betterttv.net', '1x');
+    });
+    fetch(`${SMILE.ffz_channel}/${CREDENTIALS.twitch_user_id}`).then(res => res.json()).then(res => {
+      getAllFfzChannelEmotes = replaceEmotes(res, 'frankerfacez.com', '1');
+    });
 
-      switch (commandParts[0]) {
-        case 'JOIN':
-        case 'PART':
-        case 'NOTICE':
-        case 'CLEARCHAT':
-        case 'HOSTTARGET':
-        case 'PRIVMSG':
-          parsedCommand = {
-            command: commandParts[0],
-            channel: commandParts[1]
-          }
-          break;
-        case 'PING':
-          parsedCommand = {
-            command: commandParts[0]
-          }
-          break;
-        case 'CAP':
-          parsedCommand = {
-            command: commandParts[0],
-            isCapRequestEnabled: (commandParts[2] === 'ACK') ? true : false,
-            // The parameters part of the messages contains the
-            // enabled capabilities.
-          }
-          break;
-        case 'GLOBALUSERSTATE':  // Included only if you request the /commands capability.
-                                 // But it has no meaning without also including the /tags capability.
-          parsedCommand = {
-            command: commandParts[0]
-          }
-          break;
-        case 'USERSTATE':   // Included only if you request the /commands capability.
-        case 'ROOMSTATE':   // But it has no meaning without also including the /tags capabilities.
-          parsedCommand = {
-            command: commandParts[0],
-            channel: commandParts[1]
-          }
-          break;
-        case 'RECONNECT':
-          console.log('The Twitch IRC server is about to terminate the connection for maintenance.')
-          parsedCommand = {
-            command: commandParts[0]
-          }
-          break;
-        case '421':
-          console.log(`Unsupported IRC command: ${commandParts[2]}`)
-          return null;
-        case '001':  // Logged in (successfully authenticated).
-          parsedCommand = {
-            command: commandParts[0],
-            channel: commandParts[1]
-          }
-          break;
-        case '002':  // Ignoring all other numeric messages.
-        case '003':
-        case '004':
-        case '353':  // Tells you who else is in the chat room you're joining.
-        case '366':
-        case '372':
-        case '375':
-        case '376':
-          console.log(`numeric message: ${commandParts[0]}`)
-          return null;
-        default:
-          console.log(`\nUnexpected command: ${commandParts[0]}\n`);
-          return null;
-      };
-
-      return parsedCommand;
-    };
-    // Parses the source (nick and host) components of the IRC message.
-    function parseSource(rawSourceComponent) {
-      // Not all messages contain a source
-      if (null == rawSourceComponent)
-        return null;
-      else {
-        let sourceParts = rawSourceComponent.split('!');
-        return {
-          nick: (sourceParts.length == 2) ? sourceParts[0] : null,
-          host: (sourceParts.length == 2) ? sourceParts[1] : sourceParts[0]
-        }
-      }
-    };
-    // Parsing the IRC parameters component if it contains a command (e.g., !dice).
-    function parseParameters(rawParametersComponent, command) {
-      let idx = 0
-      let commandParts = rawParametersComponent.slice(idx + 1).trim();
-      let paramsIdx = commandParts.indexOf(' ');
-
-      // no parameters
-      if (-1 == paramsIdx)
-        command.botCommand = commandParts.slice(0);
-      else {
-        command.botCommand = commandParts.slice(0, paramsIdx);
-        command.botCommandParams = commandParts.slice(paramsIdx).trim();
-        // TODO: remove extra spaces in parameters string
-      }
-
-      return command;
-    };
+    // /* example code */
+    // function parseMessage(message) {
+    //   // Contains the component parts.
+    //   let parsedMessage = {
+    //     tags: null,
+    //     source: null,
+    //     command: null,
+    //     parameters: null
+    //   };
+    //
+    //   // The start index. Increments as we parse the IRC message.
+    //   let idx = 0;
+    //
+    //   // The raw components of the IRC message.
+    //   let rawTagsComponent = null;
+    //   let rawSourceComponent = null;
+    //   let rawCommandComponent = null;
+    //   let rawParametersComponent = null;
+    //
+    //   // If the message includes tags, get the tags component of the IRC message.
+    //   // The message includes tags.
+    //   if (message[idx] === '@') {
+    //     let endIdx = message.indexOf(' ');
+    //     rawTagsComponent = message.slice(1, endIdx);
+    //     // Should now point to source colon (:).
+    //     idx = endIdx + 1;
+    //   };
+    //
+    //   // Get the source component (nick and host) of the IRC message.
+    //   // The idx should point to the source part; otherwise, it's a PING command.
+    //   if (message[idx] === ':') {
+    //     idx += 1;
+    //     let endIdx = message.indexOf(' ', idx);
+    //     rawSourceComponent = message.slice(idx, endIdx);
+    //     // Should point to the command part of the message.
+    //     idx = endIdx + 1;
+    //   };
+    //
+    //   // Get the command component of the IRC message.
+    //   // Looking for the parameters part of the message.
+    //   // But not all messages include the parameters part.
+    //   let endIdx = message.indexOf(':', idx);
+    //   if (-1 == endIdx)
+    //     endIdx = message.length;
+    //
+    //   rawCommandComponent = message.slice(idx, endIdx).trim();
+    //
+    //   // Get the parameters component of the IRC message.
+    //   // Check if the IRC message contains a parameters component.
+    //   // Should point to the parameters part of the message.
+    //   if (endIdx != message.length) {
+    //     idx = endIdx + 1;
+    //     rawParametersComponent = message.slice(idx);
+    //   };
+    //
+    //   // Parse the command component of the IRC message.
+    //   parsedMessage.command = parseCommand(rawCommandComponent);
+    //
+    //   // Only parse the rest of the components if it's a command
+    //   // we care about; we ignore some messages.
+    //   // Is null if it's a message we don't care about.
+    //   if (null == parsedMessage.command)
+    //     return null;
+    //   else {
+    //     // The IRC message contains tags.
+    //     if (null != rawTagsComponent)
+    //       parsedMessage.tags = parseTags(rawTagsComponent);
+    //
+    //     parsedMessage.source = parseSource(rawSourceComponent);
+    //
+    //     parsedMessage.parameters = rawParametersComponent;
+    //     if (rawParametersComponent && rawParametersComponent[0] === '!')
+    //       parsedMessage.command = parseParameters(rawParametersComponent, parsedMessage.command); // The user entered a bot command in the chat window.
+    //   }
+    //
+    //   return parsedMessage;
+    // };
+    // // Parses the tags component of the IRC message.
+    // function parseTags(tags) {
+    //   // badge-info=;badges=broadcaster/1;color=#0000FF;...
+    //
+    //   // List of tags to ignore.
+    //   const tagsToIgnore = {
+    //     'client-nonce': null,
+    //     'flags': null
+    //   };
+    //
+    //   // Holds the parsed list of tags.
+    //   // The key is the tag's name (e.g., color).
+    //   let dictParsedTags = {};
+    //
+    //   let parsedTags = tags.split(';');
+    //
+    //   parsedTags.forEach(tag => {
+    //     // Tags are key/value pairs.
+    //     let parsedTag = tag.split('=');
+    //     let tagValue = (parsedTag[1] === '') ? null : parsedTag[1];
+    //
+    //       // Switch on tag name
+    //       switch (parsedTag[0]) {
+    //         case 'badges':
+    //         case 'badge-info':
+    //           // badges=staff/1,broadcaster/1,turbo/1;
+    //           if (tagValue) {
+    //             let dict = {};  // Holds the list of badge objects.
+    //                             // The key is the badge's name (e.g., subscriber).
+    //             let badges = tagValue.split(',');
+    //             badges.forEach(pair => {
+    //               let badgeParts = pair.split('/');
+    //               dict[badgeParts[0]] = badgeParts[1];
+    //             })
+    //             dictParsedTags[parsedTag[0]] = dict;
+    //           } else
+    //             dictParsedTags[parsedTag[0]] = null;
+    //           break;
+    //
+    //         case 'emotes':
+    //           // emotes=25:0-4,12-16/1902:6-10
+    //           if (tagValue) {
+    //             let dictEmotes = {};  // Holds a list of emote objects.
+    //                                   // The key is the emote's ID.
+    //             let emotes = tagValue.split('/');
+    //             emotes.forEach(emote => {
+    //               let emoteParts = emote.split(':');
+    //
+    //               let textPositions = [];  // The list of position objects that identify
+    //                                        // the location of the emote in the chat message.
+    //               let positions = emoteParts[1].split(',');
+    //               positions.forEach(position => {
+    //                 let positionParts = position.split('-');
+    //                 textPositions.push({
+    //                   startPosition: positionParts[0],
+    //                   endPosition: positionParts[1]
+    //                 })
+    //               });
+    //               dictEmotes[emoteParts[0]] = textPositions;
+    //             })
+    //             dictParsedTags[parsedTag[0]] = dictEmotes;
+    //           } else
+    //             dictParsedTags[parsedTag[0]] = null;
+    //           break;
+    //         case 'emote-sets':
+    //           // emote-sets=0,33,50,237
+    //           let emoteSetIds = tagValue.split(',');  // Array of emote set IDs.
+    //           dictParsedTags[parsedTag[0]] = emoteSetIds;
+    //           break;
+    //         default:
+    //           // If the tag is in the list of tags to ignore, ignore
+    //           // it; otherwise, add it.
+    //           if (tagsToIgnore.hasOwnProperty(parsedTag[0]))
+    //             ;
+    //           else
+    //             dictParsedTags[parsedTag[0]] = tagValue;
+    //       }
+    //   });
+    //
+    //   return dictParsedTags;
+    // };
+    // // Parses the command component of the IRC message.
+    // function parseCommand(rawCommandComponent) {
+    //   let parsedCommand = null;
+    //   let commandParts = rawCommandComponent.split(' ');
+    //
+    //   switch (commandParts[0]) {
+    //     case 'JOIN':
+    //     case 'PART':
+    //     case 'NOTICE':
+    //     case 'CLEARCHAT':
+    //     case 'HOSTTARGET':
+    //     case 'PRIVMSG':
+    //       parsedCommand = {
+    //         command: commandParts[0],
+    //         channel: commandParts[1]
+    //       }
+    //       break;
+    //     case 'PING':
+    //       parsedCommand = {
+    //         command: commandParts[0]
+    //       }
+    //       break;
+    //     case 'CAP':
+    //       parsedCommand = {
+    //         command: commandParts[0],
+    //         isCapRequestEnabled: (commandParts[2] === 'ACK') ? true : false,
+    //         // The parameters part of the messages contains the
+    //         // enabled capabilities.
+    //       }
+    //       break;
+    //     case 'GLOBALUSERSTATE':  // Included only if you request the /commands capability.
+    //                              // But it has no meaning without also including the /tags capability.
+    //       parsedCommand = {
+    //         command: commandParts[0]
+    //       }
+    //       break;
+    //     case 'USERSTATE':   // Included only if you request the /commands capability.
+    //     case 'ROOMSTATE':   // But it has no meaning without also including the /tags capabilities.
+    //       parsedCommand = {
+    //         command: commandParts[0],
+    //         channel: commandParts[1]
+    //       }
+    //       break;
+    //     case 'RECONNECT':
+    //       console.log('The Twitch IRC server is about to terminate the connection for maintenance.')
+    //       parsedCommand = {
+    //         command: commandParts[0]
+    //       }
+    //       break;
+    //     case '421':
+    //       console.log(`Unsupported IRC command: ${commandParts[2]}`)
+    //       return null;
+    //     case '001':  // Logged in (successfully authenticated).
+    //       parsedCommand = {
+    //         command: commandParts[0],
+    //         channel: commandParts[1]
+    //       }
+    //       break;
+    //     case '002':  // Ignoring all other numeric messages.
+    //     case '003':
+    //     case '004':
+    //     case '353':  // Tells you who else is in the chat room you're joining.
+    //     case '366':
+    //     case '372':
+    //     case '375':
+    //     case '376':
+    //       console.log(`numeric message: ${commandParts[0]}`)
+    //       return null;
+    //     default:
+    //       console.log(`\nUnexpected command: ${commandParts[0]}\n`);
+    //       return null;
+    //   };
+    //
+    //   return parsedCommand;
+    // };
+    // // Parses the source (nick and host) components of the IRC message.
+    // function parseSource(rawSourceComponent) {
+    //   // Not all messages contain a source
+    //   if (null == rawSourceComponent)
+    //     return null;
+    //   else {
+    //     let sourceParts = rawSourceComponent.split('!');
+    //     return {
+    //       nick: (sourceParts.length == 2) ? sourceParts[0] : null,
+    //       host: (sourceParts.length == 2) ? sourceParts[1] : sourceParts[0]
+    //     }
+    //   }
+    // };
+    // // Parsing the IRC parameters component if it contains a command (e.g., !dice).
+    // function parseParameters(rawParametersComponent, command) {
+    //   let idx = 0
+    //   let commandParts = rawParametersComponent.slice(idx + 1).trim();
+    //   let paramsIdx = commandParts.indexOf(' ');
+    //
+    //   // no parameters
+    //   if (-1 == paramsIdx)
+    //     command.botCommand = commandParts.slice(0);
+    //   else {
+    //     command.botCommand = commandParts.slice(0, paramsIdx);
+    //     command.botCommandParams = commandParts.slice(paramsIdx).trim();
+    //     // TODO: remove extra spaces in parameters string
+    //   }
+    //
+    //   return command;
+    // };
   });
 }).call(this);

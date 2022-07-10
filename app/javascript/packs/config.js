@@ -41,6 +41,11 @@ const SPOTIFY = {
   volume:         'https://api.spotify.com/v1/me/player/volume',
   recently:       'https://api.spotify.com/v1/me/player/recently-played'
 }
+const SMILE = {
+  bttv_global:  'https://api.betterttv.net/3/cached/emotes/global',
+  bttv_channel: 'https://api.betterttv.net/3/cached/users/twitch',
+  ffz_channel:  'https://api.betterttv.net/3/cached/frankerfacez/users/twitch'
+}
 /* MESSAGE VARIABLE */
 const MESSAGE = {
   prefix: '#',
@@ -108,6 +113,7 @@ export {
   CREDENTIALS,
   TWITCH,
   SPOTIFY,
+  SMILE,
   MESSAGE,
   BOT_CONFIG,
   EMOTES,

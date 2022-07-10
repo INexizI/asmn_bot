@@ -2,7 +2,7 @@ import { Controller } from '@hotwired/stimulus'
 import tmi from 'tmi.js'
 import CryptoJS from "crypto-js"
 
-const { CREDENTIALS, BOT_CONFIG } = require('../config');
+const { CREDENTIALS, BOT_CONFIG } = require('../packs/config')
 const client = new tmi.Client(BOT_CONFIG)
 client.connect()
 
