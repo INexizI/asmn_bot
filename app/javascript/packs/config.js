@@ -44,7 +44,9 @@ const SPOTIFY = {
 const SMILE = {
   bttv_global:  'https://api.betterttv.net/3/cached/emotes/global',
   bttv_channel: 'https://api.betterttv.net/3/cached/users/twitch',
-  ffz_channel:  'https://api.betterttv.net/3/cached/frankerfacez/users/twitch'
+  ffz_channel:  'https://api.betterttv.net/3/cached/frankerfacez/users/twitch',
+  seventv_global: 'https://api.7tv.app/v2/emotes/global',
+  seventv_channel: 'https://api.7tv.app/v2/users'
 }
 /* MESSAGE VARIABLE */
 const MESSAGE = {
@@ -108,6 +110,12 @@ const SITE_WHITELIST = [
   { id: 3, name: 'Imgur', link: 'imgur.com' },
   { id: 4, name: 'GitHub', link: 'github.com' }
 ];
+// RegExp
+const REGEXP = {
+  command: (/^!([a-zA-Z0-9]+)(?:\W+)?(.*)?/),
+  // message: (/(\<\/?\w+\ ?>)/g, '\*'),
+  message: (/[.*+?^${}()|[\]\\]/g, '\\$&')
+};
 
 export {
   CREDENTIALS,
@@ -121,5 +129,6 @@ export {
   BAN_LIST,
   CHAT_BAN_PHRASE,
   ANNOUNCE_LIST,
-  SITE_WHITELIST
+  SITE_WHITELIST,
+  REGEXP
 }

@@ -4,18 +4,21 @@
     const Buffer = require('buffer/').Buffer
     const CryptoJS = require("crypto-js")
 
-    const { CREDENTIALS, TWITCH, SPOTIFY, SMILE, MESSAGE, BOT_CONFIG, EMOTES, SOUND_COMMAND, BAN_LIST, CHAT_BAN_PHRASE, ANNOUNCE_LIST, SITE_WHITELIST } = require('./config');
+    const { CREDENTIALS, TWITCH, SPOTIFY, SMILE, MESSAGE, BOT_CONFIG, EMOTES, SOUND_COMMAND, BAN_LIST, CHAT_BAN_PHRASE, ANNOUNCE_LIST, SITE_WHITELIST, REGEXP } = require('./config');
 
     const basic = Buffer.from(`${CREDENTIALS.spotify_client_id}:${CREDENTIALS.spotify_client_secret}`).toString('base64');
     const sleep = ms => new Promise(res => setTimeout(() => res(), ms));
-    const regexpCommand = new RegExp(/^!([a-zA-Z0-9]+)(?:\W+)?(.*)?/);
+    const regexpCommand = new RegExp(REGEXP.command);
+
     let announceCount = 0;
     let skip_count = 0;
     let getAllBadges;
     let getAllEmotes;
-    let getAllBttvEmotes;
+    let getAllBttvGlobalEmotes;
     let getAllBttvChannelEmotes;
     let getAllFfzChannelEmotes;
+    let getAllSevenGlobalEmotes;
+    let getAllSevenChannelEmotes;
 
     /* TWITCH API */
     const getTwitchToken = async () => {
@@ -409,7 +412,7 @@
     };
 
     async function onMessageHandler(channel, tags, message, self) {
-      const r = message.replace(/(\<\/?\w+\ ?>)/g, '\*');
+      const r = message.replace(REGEXP.message);
 
       /*
       // FIXME(D): high latency on callback/return user profile picture
@@ -444,7 +447,7 @@
     };
     function replaceElements(e) {
       let m = [];
-      let emotes = [].concat(getAllEmotes, getAllBttvEmotes, getAllBttvChannelEmotes, getAllFfzChannelEmotes);
+      let emotes = [].concat(getAllEmotes, getAllBttvGlobalEmotes, getAllBttvChannelEmotes, getAllFfzChannelEmotes, getAllSevenGlobalEmotes, getAllSevenChannelEmotes);
       $.each(e.split(' '), function(i, n) {
         let urlCheck = n.split('/')[2];
         const checkWL = SITE_WHITELIST.find(({link}) => link === urlCheck);
@@ -623,20 +626,26 @@
       $.each(data, function(i, n) {
         x.push({
           id: n.id,
-          name: n.code,
+          name: n.code || n.name,
           link: `https://cdn.${type}/emote/${n.id}/${scale}`
         });
       });
       return x;
     };
     fetch(SMILE.bttv_global).then(res => res.json()).then(res => {
-      getAllBttvEmotes = replaceEmotes(res, 'betterttv.net', '1x');
+      getAllBttvGlobalEmotes = replaceEmotes(res, 'betterttv.net', '1x');
     });
     fetch(`${SMILE.bttv_channel}/${CREDENTIALS.twitch_user_id}`).then(res => res.json()).then(res => {
       getAllBttvChannelEmotes = replaceEmotes(res.sharedEmotes, 'betterttv.net', '1x');
     });
     fetch(`${SMILE.ffz_channel}/${CREDENTIALS.twitch_user_id}`).then(res => res.json()).then(res => {
       getAllFfzChannelEmotes = replaceEmotes(res, 'frankerfacez.com', '1');
+    });
+    fetch(SMILE.seventv_global).then(res => res.json()).then(res => {
+      getAllSevenGlobalEmotes = replaceEmotes(res, '7tv.app', '1x');
+    });
+    fetch(`${SMILE.seventv_channel}/${CREDENTIALS.twitch_user_name}/emotes`).then(res => res.json()).then(res => {
+      getAllSevenChannelEmotes = replaceEmotes(res, '7tv.app', '1x');
     });
 
     // /* example code */
