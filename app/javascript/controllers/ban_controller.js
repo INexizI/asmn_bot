@@ -2,9 +2,34 @@ import { Controller } from '@hotwired/stimulus'
 import tmi from 'tmi.js'
 import CryptoJS from "crypto-js"
 
-const { CREDENTIALS, BOT_CONFIG } = require('../packs/config')
+const { CREDENTIALS, BOT_CONFIG, TWITCH } = require('../packs/config')
 const client = new tmi.Client(BOT_CONFIG)
 client.connect()
+
+var info = (`<div id="user-info">
+              <p>
+                <span id="user-pic" data-controller="ban" data-action="click->ban#info">Info</span>
+              </p>
+              <hr>
+              <p>
+                <span id="toUnban" data-controller="ban" data-action="click->ban#timeout">
+                  <img src="/images/check-circle.svg" id="ch-badge" title="Unban">
+                </span>
+                <span id="to600" data-controller="ban" data-action="click->ban#timeout" title="10 min">10m</span>
+                <span id="to3600" data-controller="ban" data-action="click->ban#timeout" title="1 hour">1h</span>
+                <span id="to86400" data-controller="ban" data-action="click->ban#timeout" title="1 day">1d</span>
+                <span id="to604800" data-controller="ban" data-action="click->ban#timeout" title="1 week">1w</span>
+                <span id="toBan" data-controller="ban" data-action="click->ban#timeout">
+                  <img src="/images/slash.svg" id="ch-badge" title="Ban">
+                </span>
+                <span id="toDelete" data-controller="ban" data-action="click->ban#timeout">
+                  <img src="/images/trash-2.svg" id="ch-badge" title="Delete message">
+                </span>
+              </p>
+              <span id="close" data-controller="ban" data-action="click->ban#close">
+                <img src="/images/x.svg" id="ch-badge">
+              </span>
+            </div>`)
 
 export default class extends Controller {
   async getAllMods() {
@@ -16,46 +41,58 @@ export default class extends Controller {
     })
     return x
   }
+  async getTwitchToken() {
+    let param = $.param({
+      client_id: CREDENTIALS.twitch_client_id,
+      client_secret: CREDENTIALS.twitch_client_secret,
+      grant_type: 'client_credentials',
+      scope: [
+        'user:read:email',
+        'moderation:read'
+      ]
+    })
+    const response = await fetch(`${TWITCH.token}?${param}`, {method: 'POST'})
+    return await response.json()
+  }
+  async useTwitchToken(url, param) {
+    const { access_token } = await this.getTwitchToken()
+    return fetch(`${url}?${param}`, {
+      headers: {
+        Authorization: `Bearer ${access_token}`,
+        'Client-Id': CREDENTIALS.twitch_client_id
+      }
+    })
+  }
+  async getUserInfo(user) {
+    let param = $.param({login: user})
+    return await this.useTwitchToken(TWITCH.user, param).then(res => res.json()).then(res => res.data[0])
+  }
 
   async userinfo() {
-    let info = (`<div id="user-info">
-                  <p>
-                    <span id="user-pic" data-controller="ban" data-action="click->ban#info">Info</span>
-                  </p>
-                  <p>
-                    <span id="to600" data-controller="ban" data-action="click->ban#timeout">10m</span>
-                    <span id="to3600" data-controller="ban" data-action="click->ban#timeout">1h</span>
-                    <span id="to86400" data-controller="ban" data-action="click->ban#timeout">1d</span>
-                    <span id="to604800" data-controller="ban" data-action="click->ban#timeout">1w</span>
-                    <span id="toB" data-controller="ban" data-action="click->ban#timeout">
-                      <img src="/images/slash.svg" id="ch-badge" title="Ban user">
-                    </span>
-                    <span id="toD" data-controller="ban" data-action="click->ban#timeout">
-                      <img src="/images/slash.svg" id="ch-badge" title="Delete message">
-                    </span>
-                  </p>
-                  <span id="close" data-controller="ban" data-action="click->ban#close">✕</span>
-                </div>`)
     let username = $(this.element).text().toLocaleLowerCase()
-    let x = await this.getAllMods()
-    let mod = x.find(({ name }) => name === username)
+    // let x = await this.getAllMods()
+    // let mod = x.find(({ name }) => name === username)
+    let user = await this.getUserInfo(username)
 
-    switch (username) {
-      case CREDENTIALS.twitch_user_name:
-      case process.env.TEST_TEST:
-        $('#user-info').length == 0 ? $(this.element).parent().append(info) : $('#user-info').remove()
-        break
-      default:
-        console.log(`User`)
-        $('#user-info').length == 0 ? $(this.element).parent().append(info) : $('#user-info').remove()
-    }
+    // switch (username) {
+    //   case CREDENTIALS.twitch_user_name:
+    //   case mod.name:
+    //     $('#user-info').length == 0 ? $(this.element).parent().append(info) : $('#user-info').remove()
+    //     break
+    //   default:
+    //     $('#user-info').length == 0 ? $(this.element).parent().append(info) : $('#user-info').remove()
+    // }
+    // username = null
+    $('#user-info').length == 0 ? $(this.element).parent().append(info) : $('#user-info').remove()
   }
 
   close() {
     $('#user-info').remove()
   }
-  info() {
+  async info() {
     console.log('Info')
+    let y = await this.getAllMods()
+    console.log(y)
   }
 
   async timeout() {
@@ -73,16 +110,19 @@ export default class extends Controller {
       case '3600':
       case '86400':
       case '604800':
-        console.log(`Timed out by ASMN for ${duration} seconds`)
+        console.log(`${username} timed out for ${duration} seconds`)
         // client.timeout(process.env.BOT_NAME, username, duration, 'banned via ASMN')
         break
-      case 'B':
-        console.log(`Banned by ASMN`)
+      case 'Ban':
+        console.log(`${username} banned`)
         // client.ban(process.env.BOT_NAME, username, 'banned via ASMN')
         break
-      case 'D':
-        // FIXME(D): for delete message need to know message id
-        console.log(`Message Deleted by ASMN`)
+      case 'Unban':
+        console.log(`${username} unbanned`)
+        // client.unban(process.env.BOT_NAME, username, 'banned via ASMN')
+        break
+      case 'Delete':
+        console.log(`${username} message was deleted`)
         // client.deletemessage(process.env.BOT_NAME, msgID)
         break
     }
