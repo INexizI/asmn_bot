@@ -41,38 +41,11 @@ export default class extends Controller {
     })
     return x
   }
-  async getTwitchToken() {
-    let param = $.param({
-      client_id: CREDENTIALS.twitch_client_id,
-      client_secret: CREDENTIALS.twitch_client_secret,
-      grant_type: 'client_credentials',
-      scope: [
-        'user:read:email',
-        'moderation:read'
-      ]
-    })
-    const response = await fetch(`${TWITCH.token}?${param}`, {method: 'POST'})
-    return await response.json()
-  }
-  async useTwitchToken(url, param) {
-    const { access_token } = await this.getTwitchToken()
-    return fetch(`${url}?${param}`, {
-      headers: {
-        Authorization: `Bearer ${access_token}`,
-        'Client-Id': CREDENTIALS.twitch_client_id
-      }
-    })
-  }
-  async getUserInfo(user) {
-    let param = $.param({login: user})
-    return await this.useTwitchToken(TWITCH.user, param).then(res => res.json()).then(res => res.data[0])
-  }
 
   async userinfo() {
     let username = $(this.element).text().toLocaleLowerCase()
     // let x = await this.getAllMods()
     // let mod = x.find(({ name }) => name === username)
-    let user = await this.getUserInfo(username)
 
     // switch (username) {
     //   case CREDENTIALS.twitch_user_name:

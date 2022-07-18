@@ -13,12 +13,7 @@
     let announceCount = 0;
     let skip_count = 0;
     let getAllBadges;
-    let getAllEmotes;
-    let getAllBttvGlobalEmotes;
-    let getAllBttvChannelEmotes;
-    let getAllFfzChannelEmotes;
-    let getAllSevenGlobalEmotes;
-    let getAllSevenChannelEmotes;
+    let allEmotes = [];
 
     /* TWITCH API */
     const getTwitchToken = async () => {
@@ -447,7 +442,7 @@
     };
     function replaceElements(e) {
       let m = [];
-      let emotes = [].concat(getAllEmotes, getAllBttvGlobalEmotes, getAllBttvChannelEmotes, getAllFfzChannelEmotes, getAllSevenGlobalEmotes, getAllSevenChannelEmotes);
+      let emotes = allEmotes;
       $.each(e.split(' '), function(i, n) {
         let urlCheck = n.split('/')[2];
         const checkWL = SITE_WHITELIST.find(({link}) => link === urlCheck);
@@ -632,21 +627,31 @@
       });
       return x;
     };
-    fetch(SMILE.bttv_global).then(res => res.json()).then(res => {
-      getAllBttvGlobalEmotes = replaceEmotes(res, 'betterttv.net', '1x');
+
+    $.each([
+      SMILE.bttv_global,
+      `${SMILE.bttv_channel}/${CREDENTIALS.twitch_user_id}`,
+      `${SMILE.ffz_channel}/${CREDENTIALS.twitch_user_id}`,
+      SMILE.seventv_global,
+      `${SMILE.seventv_channel}/${CREDENTIALS.twitch_user_name}/emotes`
+    ], async (i, n) => {
+      const e = await fetch(n).then(res => res.json()).then(res => {
+        !Array.isArray(res) ? res = res.sharedEmotes : res;
+        if (n.split('/')[5] === 'frankerfacez') {
+          type = 'frankerfacez.com';
+          scale = '1';
+        } else {
+          type = n.split('/')[2].slice(4);
+          scale = '1x';
+        }
+        return x = replaceEmotes(res, type, scale);
+      });
+      allEmotes = allEmotes.concat(e);
     });
-    fetch(`${SMILE.bttv_channel}/${CREDENTIALS.twitch_user_id}`).then(res => res.json()).then(res => {
-      getAllBttvChannelEmotes = replaceEmotes(res.sharedEmotes, 'betterttv.net', '1x');
-    });
-    fetch(`${SMILE.ffz_channel}/${CREDENTIALS.twitch_user_id}`).then(res => res.json()).then(res => {
-      getAllFfzChannelEmotes = replaceEmotes(res, 'frankerfacez.com', '1');
-    });
-    fetch(SMILE.seventv_global).then(res => res.json()).then(res => {
-      getAllSevenGlobalEmotes = replaceEmotes(res, '7tv.app', '1x');
-    });
-    fetch(`${SMILE.seventv_channel}/${CREDENTIALS.twitch_user_name}/emotes`).then(res => res.json()).then(res => {
-      getAllSevenChannelEmotes = replaceEmotes(res, '7tv.app', '1x');
-    });
+
+    // fetch(`https://tmi.twitch.tv/group/user/${CREDENTIALS.twitch_user_name}/chatters`).then(res => res.json()).then(res => {
+    //   const getAllMods = res.chatters.moderators;
+    // })
 
     // /* example code */
     // function parseMessage(message) {
