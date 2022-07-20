@@ -20,7 +20,7 @@
     "glob-parent": "6.0.1",
     "jquery": "^3.6.0",
     "jquery-ui": "^1.13.2",
-    "nth-check": "2.0.1",
+    "nth-check": "2.1.1",
     "query-string": "^7.1.1",
     "stimulus": "^3.0.1",
     "tmi.js": "^1.8.5",
