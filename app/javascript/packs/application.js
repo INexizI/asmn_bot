@@ -9,7 +9,7 @@ window.$ = jquery
 
 import tmi from "tmi.js"
 
-require('packs/twitch')
+// require('packs/twitch')
 
 Rails.start()
 Turbolinks.start()
