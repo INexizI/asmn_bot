@@ -1,6 +1,6 @@
-import React, { Component } from "react";
-import tmi from 'tmi.js';
+import React, { Component, useState } from "react";
 import CryptoJS from "crypto-js";
+import tmi from 'tmi.js';
 import jquery from "jquery";
 window.$ = jquery;
 
@@ -65,6 +65,22 @@ const getAccessToken = async () => {
 
   return await response.json();
 };
+const useSpotifyTokenPut = async (url, param) => {
+  const { access_token } = await getAccessToken();
+  return fetch(`${url}?${param}`, {
+    headers: {
+      Authorization: `Bearer ${access_token}`,
+    },
+  });
+};
+const useSpotifyTokenPost = async (url) => {
+  const { access_token } = await getAccessToken();
+  return fetch(`${url}`, {
+    headers: {
+      Authorization: `Bearer ${access_token}`,
+    },
+  });
+};
 const getPlaybackState = async () => {
   const { access_token } = await getAccessToken();
   return fetch(SPOTIFY.playback_state, {
@@ -73,101 +89,41 @@ const getPlaybackState = async () => {
     },
   });
 };
-const shuffleSong = async (param) => {
-  const { access_token } = await getAccessToken();
-  return fetch(`${SPOTIFY.shuffle}?state=${param}`, {
-    method: 'PUT',
-    headers: {
-      Authorization: `Bearer ${access_token}`,
-    },
-  });
-};
-const repeatSong = async (param) => {
-  const { access_token } = await getAccessToken();
-  return fetch(`${SPOTIFY.repeat}?state=${param}`, {
-    method: 'PUT',
-    headers: {
-      Authorization: `Bearer ${access_token}`,
-    },
-  });
-};
-const prevSong = async () => {
-  const { access_token } = await getAccessToken();
-  return fetch(SPOTIFY.previous, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${access_token}`,
-    },
-  })
-};
-const nextSong = async () => {
-  const { access_token } = await getAccessToken();
-  return fetch(SPOTIFY.next, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${access_token}`,
-    },
-  });
-};
-const pauseSong = async () => {
-  const { access_token } = await getAccessToken();
-  return fetch(SPOTIFY.pause, {
-    method: 'PUT',
-    headers: {
-      Authorization: `Bearer ${access_token}`,
-    },
-  });
-};
-const playSong = async () => {
-  const { access_token } = await getAccessToken();
-  return fetch(SPOTIFY.play, {
-    method: 'PUT',
-    headers: {
-      Authorization: `Bearer ${access_token}`,
-    },
-  });
-};
-const volumeSong = async (param) => {
-  const { access_token } = await getAccessToken();
-  return fetch(`${SPOTIFY.volume}?volume_percent=${param}`, {
-    method: 'PUT',
-    headers: {
-      Authorization: `Bearer ${access_token}`,
-    },
-  });
-};
 const spotifyCurrentTrack = async () => {
   const response = await getPlaybackState();
-  // console.log(`response status: ${response.status}`)
-  if (response.status === 204 || response.status > 400) {
+  if (response.status === 204) {
+    $('#sp-title').text(`Spotify offline`);
+    $('#sp-artist, #sp-albumName, #sp-albumImg, #sp-link').empty();
+  } else if (response.status > 400) {
     $('#sp-title').text(`Response error`);
     $('#sp-artist, #sp-albumName, #sp-albumImg, #sp-link').empty();
   } else if (response.status === 200) {
     const song = await response.json();
     const isPlaying = song.is_playing;
-    // if (song.item === null) {
-    //   $('#sp-title').text(`Current song can't be find`)
-    //   $('#sp-artist, #sp-albumName, #sp-albumImg, #sp-link').empty()
     if (!isPlaying) {
-      $('#sp-title').text(`Music is not playing`)
-      $('#sp-artist, #sp-albumName, #sp-albumImg, #sp-link').empty()
+      $('#sp-title').text(`Music is not playing`);
+      $('#sp-artist, #sp-albumName, #sp-albumImg, #sp-link').empty();
+      $('#btn-pp img').attr('src', '/images/play.svg');
     } else {
       const title = song.item.name;
       const artist = song.item.artists.map((_artist) => _artist.name).join(', ');
-      // const album = song.item.album.name;
+      const album = song.item.album.name;
       const albumImageUrl = song.item.album.images[0].url;
       const songUrl = song.item.external_urls.spotify;
+      const songUri = song.item.uri;
       const currentSong = [
         { title: title },
         { artist: artist },
-        // { album: album },
+        { album: album },
         { albumImageUrl: albumImageUrl },
-        { songUrl: songUrl }
-      ]
+        { songUrl: songUrl },
+        { songUri: songUri }
+      ];
       $('#sp-title').text(title);
       $('#sp-artist').text(artist);
       // $('#sp-albumName').text(album);
       $('#sp-albumImg').html(`<img src="${albumImageUrl}">`);
+      $('#btn-pp img').attr('src', '/images/pause.svg');
     }
     return song.item;
   }
@@ -309,7 +265,7 @@ async function onMessageHandler(channel, tags, message, self) {
       <div id="ch-block">
         <p id="user-badge">${b}</p>
         <p id="user-name">
-          <span style="color: ${tags.color}" id="ch-user" data-controller="ban" data-action="click->ban#userinfo" data-target="${cryptData}">${tags['display-name']}</span>
+          <span style="color: ${tags.color}" id="ch-user" data-controller="ban" data-action="click->ban#userInfo" data-target="${cryptData}">${tags['display-name']}</span>
         </p>
         <span id="ch-msg">${e}</span>
       </div>`)
@@ -363,7 +319,7 @@ function getMetaData(md) {
 function banCheck(w) {
   let c = false;
   $.each(w.split(' '), function(i, n) {
-    const ban = BAN_LIST.find(({name}) => name === n);
+    const ban = BAN_LIST.find(({ name }) => name === n);
     if (ban != undefined) c = true;
   });
   return c;
@@ -492,6 +448,7 @@ class Bot extends React.Component {
       if (!isPlaying) {
         $('#sp-title').text('Music is not playing');
         $('#sp-artist, #sp-albumName, #sp-albumImg, #sp-link').empty();
+        $('#btn-pp img').attr('src', '/images/play.svg');
       } else {
         const title = song.item.name;
         const artist = song.item.artists.map((_artist) => _artist.name).join(', ');
@@ -510,55 +467,66 @@ class Bot extends React.Component {
         $('#sp-title').text(title);
         $('#sp-artist').text(artist);
         $('#sp-albumImg').html(`<img src="${albumImageUrl}">`);
+        $('#btn-pp img').attr('src', '/images/pause.svg');
       };
     };
   }
   /* response only with spotify premium 👇 */
   async shuffle() {
-    await shuffleSong();
+    let x;
+    const res = await getPlaybackState().then(res => res.json()).then(res => res.shuffle_state);
+    res == false ? x = true : x = false;
+    await useSpotifyTokenPut(SPOTIFY.shuffle, `state=${x}`);
   }
   async repeat() {
-    await repeatSong();
+    let x;
+    const res = await getPlaybackState().then(res => res.json()).then(res => res.repeat_state);
+    res == 'off' ? x = 'track' : x = 'off';
+    await useSpotifyTokenPut(SPOTIFY.repeat, `state=${x}`);
   }
   async skipToNext() {
-    await nextSong().then(sleep(500).then(() => spotifyCurrentTrack()));
+    await useSpotifyTokenPost(SPOTIFY.next);
   }
   async skipToPrev() {
-    await prevSong().then(sleep(500).then(() => spotifyCurrentTrack()));
+    await useSpotifyTokenPost(SPOTIFY.previous);
   }
-  async pause() {
-    await pauseSong();
-  }
-  async play() {
-    await playSong();
+  async pauseResume() {
+    let x;
+    const res = await getPlaybackState().then(res => res.json()).then(res => res.is_playing);
+    res == true ? x = SPOTIFY.pause : SPOTIFY.play;
+    await useSpotifyTokenPut(x, ``);
   }
   async mute() {
-    await volumeSong(0);
+    let x;
+    const res = await getPlaybackState().then(res => res.json()).then(res => res.device.volume_percent);
+    res != 0 ? x = 0 : x = res;
+    await useSpotifyTokenPut(SPOTIFY.volume, `volume_percent=${x}`);
   }
+
   /* RENDER VIEW */
   render() {
-    return [
-      e("div", { key: "img", className: "img" },
-        e("div", { className: "chat" }, null),
-        e("iframe", { id:"chat", src: `https://www.twitch.tv/embed/${CREDENTIALS.twitch_user_name}/chat?parent=localhost`, frameBorder: "0", title: "Chat"}, null)
-      ),
-      e("div", { key: "song", className: "song" },
-        e("p", { id: "sp-albumImg" }, null),
-        e("p", { id: "sp-title" }, null),
-        e("p", { id: "sp-artist" }, null)
-      ),
-      e("div", { key: "btn", className: "btn" },
-        e("button", { id: "btn-info", onClick: this.updSongInfo }, "Update Info"),
-        e("div", { className: "btn-ctrl" },
-          e("button", { id: "btn-shuffle", onClick: this.shuffle }, e("img", { src: '/images/shuffle.svg' }, null)),
-          e("button", { id: "btn-previous", onClick: this.skipToPrev }, e("img", { src: '/images/skip-back.svg' }, null)),
-          e("button", { id: "btn-pause", onClick: this.pause }, e("img", { src: '/images/play.svg' }, null)),
-          e("button", { id: "btn-forward", onClick: this.skipToNext }, e("img", { src: '/images/skip-forward.svg' }, null)),
-          e("button", { id: "btn-repeat", onClick: this.repeat }, e("img", { src: '/images/repeat.svg' }, null)),
-          e("button", { id: "btn-mute", onClick: this.mute }, e("img", { src: '/images/volume-x.svg' }, null))
-        )
-      )
-    ]
+    // return [
+    //   e("div", { key: "img", className: "img" },
+    //     e("div", { className: "chat" }, null),
+    //     e("iframe", { id:"chat", src: `https://www.twitch.tv/embed/${CREDENTIALS.twitch_user_name}/chat?parent=localhost`, frameBorder: "0", title: "Chat"}, null)
+    //   ),
+    //   e("div", { key: "song", className: "song" },
+    //     e("p", { id: "sp-albumImg" }, null),
+    //     e("p", { id: "sp-title" }, null),
+    //     e("p", { id: "sp-artist" }, null)
+    //   ),
+    //   e("div", { key: "btn", className: "btn" },
+    //     e("button", { id: "btn-info", onClick: this.updSongInfo }, "Update Info"),
+    //     e("div", { className: "btn-ctrl" },
+    //       e("button", { id: "btn-shuffle", onClick: this.shuffle }, e("img", { src: '/images/shuffle.svg' }, null)),
+    //       e("button", { id: "btn-previous", onClick: this.skipToPrev }, e("img", { src: '/images/skip-back.svg' }, null)),
+    //       e("button", { id: "btn-pp", onClick: this.pauseResume }, e("img", { src: '/images/play.svg' }, null)),
+    //       e("button", { id: "btn-forward", onClick: this.skipToNext }, e("img", { src: '/images/skip-forward.svg' }, null)),
+    //       e("button", { id: "btn-repeat", onClick: this.repeat }, e("img", { src: '/images/repeat.svg' }, null)),
+    //       e("button", { id: "btn-mute", onClick: this.mute }, e("img", { src: '/images/volume-x.svg' }, null))
+    //     )
+    //   )
+    // ]
   }
 };
 
