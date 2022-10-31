@@ -1,10 +1,13 @@
-import React, { Component, useState } from "react";
+import React, { Component, createElement, useState } from "react";
+import styled from "styled-components";
+import { Modal } from "./Modal";
+import { GlobalStyle } from "../packs/globalStyle";
 import CryptoJS from "crypto-js";
 import tmi from 'tmi.js';
 import jquery from "jquery";
 window.$ = jquery;
 
-const e = React.createElement;
+const e = createElement;
 const { CREDENTIALS, TWITCH, SPOTIFY, SMILE, MESSAGE, BOT_CONFIG, EMOTES, SOUND_COMMAND, BAN_LIST, CHAT_BAN_PHRASE, ANNOUNCE_LIST, SITE_WHITELIST, REGEXP } = require('../packs/config');
 
 const queryString = require('query-string');
@@ -79,6 +82,20 @@ const useSpotifyTokenPost = async (url) => {
     headers: {
       Authorization: `Bearer ${access_token}`,
     },
+  });
+};
+const getTrack = async (track_id) => {
+  const { access_token } = await getAccessToken();
+  return fetch(`${SPOTIFY.track}/${track_id}`, { headers: { Authorization: `Bearer ${access_token}` } }).then(res => res.json()).then(res => {
+    let x = {
+      title: res.name,
+      artist: res.artists.map((_artist) => _artist.name).join(', '),
+      album: res.album.name,
+      albumImageUrl: res.album.images[0].url,
+      songUrl: res.external_urls.spotify,
+      songUri: res.uri
+    };
+    return x;
   });
 };
 const getPlaybackState = async () => {
@@ -262,37 +279,40 @@ async function onMessageHandler(channel, tags, message, self) {
   const e = replaceElements(r);
 
   $('.chat').append(`
-      <div id="ch-block">
-        <p id="user-badge">${b}</p>
-        <p id="user-name">
-          <span style="color: ${tags.color}" id="ch-user" data-controller="ban" data-action="click->ban#userInfo" data-target="${cryptData}">${tags['display-name']}</span>
-        </p>
-        <span id="ch-msg">${e}</span>
-      </div>`)
-    .animate({scrollTop: $('.chat').prop('scrollHeight')}, 1000);
+    <div id="ch-block">
+      <p id="user-badge">${b}</p>
+      <p id="user-name">
+        <span style="color: ${tags.color}" id="ch-user" data-controller="ban" data-action="click->ban#userInfo" data-target="${cryptData}">${tags['display-name']}</span>
+      </p>
+      <span id="ch-msg">${e}</span>
+    </div>
+  `).animate({scrollTop: $('.chat').prop('scrollHeight')}, 1000);
   clearChat();
 };
 function replaceElements(e) {
   let m = [];
   let emotes = allEmotes;
-  $.each(e.split(' '), function(i, n) {
+  $.each(e.split(' '), async (i, n) => {
     let urlCheck = n.split('/')[2];
     const checkWL = SITE_WHITELIST.find(({ link }) => link === urlCheck);
     const emote = emotes.find(({ name }) => name === n);
     if (emote)
       m.push(`<img src=${emote.link} id="ch-emote">`);
-    else if (checkWL)
-      $.ajax({ url: n, type: 'get', dataType: 'html', async: false, success: function(data) {
-        let img, site, title;
-        data = $.parseHTML(data);
-        const meta = getMetaData(data);
-        console.log(meta);
-        site = meta.find(({ name }) => name === 'twitter:site');
-        title = meta.find(({ name }) => name === 'twitter:title');
-        site.value == '@github' ? img = meta.find(({ name }) => name === 'twitter:image:src') : img = meta.find(({ name }) => name === 'twitter:image');
-        m.push(`<span id="ch-msg">${`<a href="${n}"><img src="${img.value}" id="ch-ythumb" title="${title.value}"></a>`}</span>`);
-      }});
-    else
+    else if (checkWL) {
+      if (checkWL.name == 'Spotify') {
+        const s = await getTrack(n.split('/').pop());
+        m.push(`<a href="${n}"><img src="${s.albumImageUrl}" id="ch-ythumb" title="${s.title}"></a>`);
+      } else
+        $.ajax({ url: n, type: 'get', dataType: 'html', async: false, success: function(data) {
+          let img, site, title;
+          data = $.parseHTML(data);
+          const meta = getMetaData(data);
+          img = meta.find(({ name }) => name === 'og:image');
+          title = meta.find(({ name }) => name === 'og:title');
+          site = meta.find(({ name }) => name === 'og:site_name');
+          m.push(`<a href="${n}"><img src="${img.value}" id="ch-ythumb" title="${title.value}"></a>`);
+        }});
+    } else
       m.push(n);
   });
   return e = m.join(' ');
@@ -308,19 +328,22 @@ function replaceBadge(b) {
 function getMetaData(md) {
   let x = [];
   $.each(md, function(i, n) {
-    if (n.nodeName.toString().toLowerCase() == 'meta' && $(n).attr("name") != null && typeof $(n).attr("name") != "undefined")
+    // if (n.nodeName.toString().toLowerCase() == 'meta' && $(n).attr("name") != null && typeof $(n).attr("name") != "undefined")
+    if (n.nodeName.toString().toLowerCase() == 'meta' && ($(n).attr("name") != null || $(n).attr("property") != null)) {
       x.push({
-        name: $(n).attr('name'),
+        name: $(n).attr('name') ? $(n).attr('name') : $(n).attr('property'),
         value: ($(n).attr('content') ? $(n).attr('content') : ($(n).attr('value') ? $(n).attr('value') : ''))
       });
+    }
   });
   return x;
 };
 function banCheck(w) {
   let c = false;
   $.each(w.split(' '), function(i, n) {
+    const checkWL = SITE_WHITELIST.find(({ link }) => link === n.split('/')[2]);
     const ban = BAN_LIST.find(({ name }) => name === n);
-    if (ban != undefined) c = true;
+    if (ban != undefined || (n.slice(0, 4) == 'http' && checkWL == undefined)) c = true;
   });
   return c;
 };
@@ -403,31 +426,6 @@ $.each([
   allEmotes = allEmotes.concat(e);
 });
 
-var info = (`<div id="user-info">
-              <p>
-                <span id="user-pic" data-controller="ban" data-action="click->ban#info">Info</span>
-              </p>
-              <hr>
-              <p>
-                <span id="toUnban" data-controller="ban" data-action="click->ban#timeout">
-                  <img src="/images/check-circle.svg" id="ch-badge" title="Unban">
-                </span>
-                <span id="to600" data-controller="ban" data-action="click->ban#timeout" title="10 min">10m</span>
-                <span id="to3600" data-controller="ban" data-action="click->ban#timeout" title="1 hour">1h</span>
-                <span id="to86400" data-controller="ban" data-action="click->ban#timeout" title="1 day">1d</span>
-                <span id="to604800" data-controller="ban" data-action="click->ban#timeout" title="1 week">1w</span>
-                <span id="toBan" data-controller="ban" data-action="click->ban#timeout">
-                  <img src="/images/slash.svg" id="ch-badge" title="Ban">
-                </span>
-                <span id="toDelete" data-controller="ban" data-action="click->ban#timeout">
-                  <img src="/images/trash-2.svg" id="ch-badge" title="Delete message">
-                </span>
-              </p>
-              <span id="close" data-controller="ban" data-action="click->ban#close">
-                <img src="/images/x.svg" id="ch-badge">
-              </span>
-            </div>`)
-
 class Bot extends React.Component {
   async componentDidMount() {
     await getAllEmotes();
@@ -505,32 +503,37 @@ class Bot extends React.Component {
 
   /* RENDER VIEW */
   render() {
-    // return [
-    //   e("div", { key: "img", className: "img" },
-    //     e("div", { className: "chat" }, null),
-    //     e("iframe", { id:"chat", src: `https://www.twitch.tv/embed/${CREDENTIALS.twitch_user_name}/chat?parent=localhost`, frameBorder: "0", title: "Chat"}, null)
-    //   ),
-    //   e("div", { key: "song", className: "song" },
-    //     e("p", { id: "sp-albumImg" }, null),
-    //     e("p", { id: "sp-title" }, null),
-    //     e("p", { id: "sp-artist" }, null)
-    //   ),
-    //   e("div", { key: "btn", className: "btn" },
-    //     e("button", { id: "btn-info", onClick: this.updSongInfo }, "Update Info"),
-    //     e("div", { className: "btn-ctrl" },
-    //       e("button", { id: "btn-shuffle", onClick: this.shuffle }, e("img", { src: '/images/shuffle.svg' }, null)),
-    //       e("button", { id: "btn-previous", onClick: this.skipToPrev }, e("img", { src: '/images/skip-back.svg' }, null)),
-    //       e("button", { id: "btn-pp", onClick: this.pauseResume }, e("img", { src: '/images/play.svg' }, null)),
-    //       e("button", { id: "btn-forward", onClick: this.skipToNext }, e("img", { src: '/images/skip-forward.svg' }, null)),
-    //       e("button", { id: "btn-repeat", onClick: this.repeat }, e("img", { src: '/images/repeat.svg' }, null)),
-    //       e("button", { id: "btn-mute", onClick: this.mute }, e("img", { src: '/images/volume-x.svg' }, null))
-    //     )
-    //   )
-    // ]
+    return [
+      e("div", { key: "img", className: "img" },
+        e("div", { className: "chat" }, null),
+        e("iframe", { id:"chat", src: `https://www.twitch.tv/embed/${CREDENTIALS.twitch_user_name}/chat?parent=localhost`, frameBorder: "0", title: "Chat"}, null)
+      ),
+      e("div", { key: "song", className: "song" },
+        e("p", { id: "sp-albumImg" }, null),
+        e("p", { id: "sp-title" }, null),
+        e("p", { id: "sp-artist" }, null)
+      ),
+      e("div", { key: "btn", className: "btn" },
+        e("button", { id: "btn-info", onClick: this.updSongInfo }, "Update Info"),
+        e("div", { className: "btn-ctrl" },
+          e("button", { id: "btn-shuffle", onClick: this.shuffle }, e("img", { src: '/images/shuffle.svg' }, null)),
+          e("button", { id: "btn-previous", onClick: this.skipToPrev }, e("img", { src: '/images/skip-back.svg' }, null)),
+          e("button", { id: "btn-pp", onClick: this.pauseResume }, e("img", { src: '/images/play.svg' }, null)),
+          e("button", { id: "btn-forward", onClick: this.skipToNext }, e("img", { src: '/images/skip-forward.svg' }, null)),
+          e("button", { id: "btn-repeat", onClick: this.repeat }, e("img", { src: '/images/repeat.svg' }, null)),
+          e("button", { id: "btn-mute", onClick: this.mute }, e("img", { src: '/images/volume-x.svg' }, null))
+        )
+      )
+    ]
   }
 };
 
 const App = () => {
+  const [showModal, setShowModal] = useState(false)
+  const openModal = () => {
+    setShowModal(prev => !prev)
+  }
+
   return <Bot />
 }
 

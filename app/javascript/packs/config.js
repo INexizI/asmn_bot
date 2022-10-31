@@ -26,7 +26,8 @@ const TWITCH = {
   emotes_set:    'https://api.twitch.tv/helix/chat/emotes/set',
   poll:          'https://api.twitch.tv/helix/polls',
   predictions:   'https://api.twitch.tv/helix/predictions',
-  ban:           'https://api.twitch.tv/helix/moderation/bans'
+  ban:           'https://api.twitch.tv/helix/moderation/bans',
+  mods:          'https://api.twitch.tv/helix/moderation/moderators'
 }
 const SPOTIFY = {
   authorize:      'https://accounts.spotify.com/authorize',
@@ -39,7 +40,8 @@ const SPOTIFY = {
   shuffle:        'https://api.spotify.com/v1/me/player/shuffle',
   repeat:         'https://api.spotify.com/v1/me/player/repeat',
   volume:         'https://api.spotify.com/v1/me/player/volume',
-  recently:       'https://api.spotify.com/v1/me/player/recently-played'
+  recently:       'https://api.spotify.com/v1/me/player/recently-played',
+  track:          'https://api.spotify.com/v1/tracks'
 }
 const SMILE = {
   bttv_global:  'https://api.betterttv.net/3/cached/emotes/global',
@@ -108,7 +110,8 @@ const SITE_WHITELIST = [
   { id: 1, name: 'YouTube', link: 'www.youtube.com' },
   { id: 2, name: 'YouTube', link: 'youtu.be' },
   { id: 3, name: 'Imgur', link: 'imgur.com' },
-  { id: 4, name: 'GitHub', link: 'github.com' }
+  { id: 4, name: 'GitHub', link: 'github.com' },
+  { id: 5, name: 'Spotify', link: 'open.spotify.com' }
 ];
 // RegExp
 const REGEXP = {
