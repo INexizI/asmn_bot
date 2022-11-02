@@ -111,7 +111,8 @@ const SITE_WHITELIST = [
   { id: 2, name: 'YouTube', link: 'youtu.be' },
   { id: 3, name: 'Imgur', link: 'imgur.com' },
   { id: 4, name: 'GitHub', link: 'github.com' },
-  { id: 5, name: 'Spotify', link: 'open.spotify.com' }
+  { id: 5, name: 'Spotify', link: 'open.spotify.com' },
+  { id: 6, name: 'Spotify', link: 'api.spotify.com' }
 ];
 // RegExp
 const REGEXP = {

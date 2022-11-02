@@ -84,20 +84,6 @@ const useSpotifyTokenPost = async (url) => {
     },
   });
 };
-const getTrack = async (track_id) => {
-  const { access_token } = await getAccessToken();
-  return fetch(`${SPOTIFY.track}/${track_id}`, { headers: { Authorization: `Bearer ${access_token}` } }).then(res => res.json()).then(res => {
-    let x = {
-      title: res.name,
-      artist: res.artists.map((_artist) => _artist.name).join(', '),
-      album: res.album.name,
-      albumImageUrl: res.album.images[0].url,
-      songUrl: res.external_urls.spotify,
-      songUri: res.uri
-    };
-    return x;
-  });
-};
 const getPlaybackState = async () => {
   const { access_token } = await getAccessToken();
   return fetch(SPOTIFY.playback_state, {
@@ -195,7 +181,7 @@ client.on('chat', (channel, tags, message, self) => {
   let messageType = msg.charAt(0);
 
   /*
-  // NOTE(D): old method for commands
+    NOTE(D): old method for commands
   const [raw, command, argument] = message.match(regexpCommand);
   const { response } = commands[command] || {};
   typeof response === 'function' ? client.action(channel, response(tags.username)) : client.action(channel, response);
@@ -257,7 +243,7 @@ client.on('chat', (channel, tags, message, self) => {
     const ban = banCheck(msg);
     ban ? client.deletemessage(channel, tags.id) : onMessageHandler(channel, tags, message, self);
     /*
-    // NOTE(D): to banned user, use this string below 👇
+      NOTE(D): to banned user, use this string below 👇
     ban ? client.ban(channel, username, reason) : onMessageHandler(channel, tags, message, self);
     */
   };
@@ -296,22 +282,57 @@ function replaceElements(e) {
     let urlCheck = n.split('/')[2];
     const checkWL = SITE_WHITELIST.find(({ link }) => link === urlCheck);
     const emote = emotes.find(({ name }) => name === n);
-    if (emote)
+    if (emote) {
       m.push(`<img src=${emote.link} id="ch-emote">`);
-    else if (checkWL) {
-      if (checkWL.name == 'Spotify') {
-        const s = await getTrack(n.split('/').pop());
-        m.push(`<a href="${n}"><img src="${s.albumImageUrl}" id="ch-ythumb" title="${s.title}"></a>`);
-      } else
-        $.ajax({ url: n, type: 'get', dataType: 'html', async: false, success: function(data) {
-          let img, site, title;
-          data = $.parseHTML(data);
-          const meta = getMetaData(data);
-          img = meta.find(({ name }) => name === 'og:image');
-          title = meta.find(({ name }) => name === 'og:title');
-          site = meta.find(({ name }) => name === 'og:site_name');
-          m.push(`<a href="${n}"><img src="${img.value}" id="ch-ythumb" title="${title.value}"></a>`);
-        }});
+    } else if (checkWL) {
+      switch (checkWL.name) {
+        case 'Spotify':
+          $.ajax({
+            url: "https://accounts.spotify.com/api/token",
+            headers: {
+              'Authorization': `Basic ${basic}`,
+              'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            type: 'post',
+            dataType: 'json',
+            async: false,
+            data: {
+              grant_type: 'client_credentials',
+              refresh_token: `${CREDENTIALS.spotify_refresh_token}`
+            },
+            success: (data) => {
+              $.ajax({
+                url: `${SPOTIFY.track}/${n.split('/').pop()}`,
+                headers: {
+                  Authorization: `Bearer ${data.access_token}`
+                },
+                type: 'get',
+                dataType: 'json',
+                async: false,
+                success: (data) => {
+                  const title = data.name;
+                  const image = data.album.images[1].url;
+                  const artist = data.artists.map((_artist) => _artist.name).join(', ');
+                  m.push(`<a href="${n}"><img src="${image}" id="ch-thumb_s" title="${artist} - ${title}"></a>`);
+                }
+              });
+            }
+          });
+          break;
+        case 'YouTube':
+        case 'GitHub':
+        case 'Imgur':
+          $.ajax({ url: n, type: 'get', dataType: 'html', async: false, success: function(data) {
+            let img, site, title;
+            data = $.parseHTML(data);
+            const meta = getMetaData(data);
+            img = meta.find(({ name }) => name === 'og:image');
+            title = meta.find(({ name }) => name === 'og:title');
+            site = meta.find(({ name }) => name === 'og:site_name');
+            m.push(`<a href="${n}"><img src="${img.value}" id="ch-thumb_yt" title="${title.value}"></a>`);
+          }});
+          break;
+      }
     } else
       m.push(n);
   });
