@@ -311,9 +311,16 @@ function replaceElements(e) {
                 async: false,
                 success: (data) => {
                   const title = data.name;
-                  const image = data.album.images[1].url;
+                  const image = data.album.images[0].url;
                   const artist = data.artists.map((_artist) => _artist.name).join(', ');
-                  m.push(`<a href="${n}"><img src="${image}" id="ch-thumb_s" title="${artist} - ${title}"></a>`);
+                  m.push(`
+                    <a href="${n}" id="sp" title="${artist} - ${title}">
+                      <img src="${image}">
+                      <p>
+                        <span id="sp-n">${title}</span>
+                        <span id="sp-a">${artist}</span>
+                      </p>
+                    </a>`);
                 }
               });
             }
@@ -329,7 +336,7 @@ function replaceElements(e) {
             img = meta.find(({ name }) => name === 'og:image');
             title = meta.find(({ name }) => name === 'og:title');
             site = meta.find(({ name }) => name === 'og:site_name');
-            m.push(`<a href="${n}"><img src="${img.value}" id="ch-thumb_yt" title="${title.value}"></a>`);
+            m.push(`<a href="${n}"><img src="${img.value}" id="ch-thumb" title="${title.value}"></a>`);
           }});
           break;
       }
