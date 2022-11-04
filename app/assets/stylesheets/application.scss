@@ -130,7 +130,8 @@ body {
     #user-info {
       // display: flex;
       width: 400px;
-      height: 80px;
+      // height: 80px;
+      height: fit-content;
       position: relative;
       top: 25px;
       left: -80px;
