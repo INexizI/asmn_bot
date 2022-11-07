@@ -460,6 +460,34 @@ class Bot extends React.Component {
     await getAllBadges();
     await spotifyCurrentTrack();
     setInterval(() => spotifyCurrentTrack(), 10000);
+
+    // /*
+    // select the node that will be observed for mutations
+    const target = document.getElementById('chat-block');
+    // options for the observer (which mutations to observe)
+    const config = { attributes: true, childList: true, subtree: true };
+    // callback function to execute when mutations are observed
+    const cb = (mutationList, observer) => {
+      for (const mutation of mutationList) {
+        if (mutation.type === 'childList') {
+          console.log('A child node has been added or removed.');
+        } else if (mutation.type === 'attributes') {
+          console.log(`The ${mutation.attributeName} attribute was modified.`);
+        }
+      }
+    };
+    // create an observer instance linked to the callback function
+    const obs = new MutationObserver(cb);
+    // start observing the target node for configured mutations
+    obs.observe(target, config);
+    // stop observing
+    // observer.disconnect();
+    // */
+
+    $('.chat').on('click', '#ch-block', (el) => {
+      let x = el.currentTarget;
+      console.log($(x).find('#ch-msg').text());
+    });
   }
 
   /* SPOTIFY FUNCTIONS */
@@ -533,7 +561,7 @@ class Bot extends React.Component {
   render() {
     return [
       e("div", { key: "img", className: "img" },
-        e("div", { className: "chat" }, null),
+        e("div", { className: "chat", id: "chat-block" }, null),
         e("iframe", { id:"chat", src: `https://www.twitch.tv/embed/${CREDENTIALS.twitch_user_name}/chat?parent=localhost`, frameBorder: "0", title: "Chat"}, null)
       ),
       e("div", { key: "song", className: "song" },
