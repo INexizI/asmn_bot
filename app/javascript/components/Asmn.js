@@ -193,8 +193,9 @@ client.on('chat', (channel, tags, message, self) => {
       /* --- Spotify --- */
       case 'song':
         spotifyCurrentTrack().then(res => {
-          if (typeof res === 'object')
-            client.action(channel, `${res.artists.map((_artist) => _artist.name).join(', ')} - ${res.name} 👇 ${res.external_urls.spotify}`);
+          typeof res === 'object'
+            ? client.action(channel, `${res.artists.map((_artist) => _artist.name).join(', ')} - ${res.name} 👇 ${res.external_urls.spotify}`)
+            : client.action(channel, `Spotify offline`);
         });
         break;
       /* --- Twitch --- */
@@ -454,6 +455,68 @@ $.each([
   allEmotes = allEmotes.concat(e);
 });
 
+/* ADD NEW */
+const userInfo = (`
+  <div id="user-info">
+    <p>
+      <span id="user-pic">Info</span>
+    </p>
+    <hr>
+    <p>
+      <span id="toUnban">
+        <img src="/images/check-circle.svg" id="ch-badge" title="Unban">
+      </span>
+      <span id="to600" title="10 min">10m</span>
+      <span id="to3600" title="1 hour">1h</span>
+      <span id="to86400" title="1 day">1d</span>
+      <span id="to604800" title="1 week">1w</span>
+      <span id="toBan">
+        <img src="/images/slash.svg" id="ch-badge" title="Ban">
+      </span>
+      <span id="toDelete">
+        <img src="/images/trash-2.svg" id="ch-badge" title="Delete message">
+      </span>
+    </p>
+    <span id="close">
+      <img src="/images/x.svg" id="ch-badge">
+    </span>
+  </div>`);
+
+function obs() {
+  // select the node that will be observed for mutations
+  const target = document.getElementById('chat-block');
+  // options for the observer (which mutations to observe)
+  const config = { attributes: true, childList: true, subtree: true };
+  // callback function to execute when mutations are observed
+  const cb = (mutationList, observer) => {
+    for (const mutation of mutationList) {
+      if (mutation.type === 'childList') {
+        console.log('A child node has been added or removed.');
+      } else if (mutation.type === 'attributes') {
+        console.log(`The ${mutation.attributeName} attribute was modified.`);
+      }
+    };
+  };
+  // create an observer instance linked to the callback function
+  const obs = new MutationObserver(cb);
+  // start observing the target node for configured mutations
+  obs.observe(target, config);
+  // stop observing
+  // observer.disconnect();
+};
+function user_info() {
+  $('.chat').on('click', '#ch-user', (el) => {
+    let x = el.currentTarget;
+    $(x).next().length == 0 ? $(x).parent().append(userInfo) : $(x).next().remove();
+  });
+}
+function close() {
+  $('.chat').on('click', '#close', (el) => {
+    let x = el.currentTarget;
+    $(x).parent().remove();
+  });
+}
+
 class Bot extends React.Component {
   async componentDidMount() {
     await getAllEmotes();
@@ -461,33 +524,10 @@ class Bot extends React.Component {
     await spotifyCurrentTrack();
     setInterval(() => spotifyCurrentTrack(), 10000);
 
-    // /*
-    // select the node that will be observed for mutations
-    const target = document.getElementById('chat-block');
-    // options for the observer (which mutations to observe)
-    const config = { attributes: true, childList: true, subtree: true };
-    // callback function to execute when mutations are observed
-    const cb = (mutationList, observer) => {
-      for (const mutation of mutationList) {
-        if (mutation.type === 'childList') {
-          console.log('A child node has been added or removed.');
-        } else if (mutation.type === 'attributes') {
-          console.log(`The ${mutation.attributeName} attribute was modified.`);
-        }
-      }
-    };
-    // create an observer instance linked to the callback function
-    const obs = new MutationObserver(cb);
-    // start observing the target node for configured mutations
-    obs.observe(target, config);
-    // stop observing
-    // observer.disconnect();
-    // */
-
-    $('.chat').on('click', '#ch-block', (el) => {
-      let x = el.currentTarget;
-      console.log($(x).find('#ch-msg').text());
-    });
+    // NOTE(D): sort out these functions in places
+    obs();
+    user_info();
+    close();
   }
 
   /* SPOTIFY FUNCTIONS */
