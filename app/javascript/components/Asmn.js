@@ -68,17 +68,9 @@ const getAccessToken = async () => {
 
   return await response.json();
 };
-const useSpotifyTokenPut = async (url, param) => {
+const useSpotifyToken = async (url) => {
   const { access_token } = await getAccessToken();
-  return fetch(`${url}?${param}`, {
-    headers: {
-      Authorization: `Bearer ${access_token}`,
-    },
-  });
-};
-const useSpotifyTokenPost = async (url) => {
-  const { access_token } = await getAccessToken();
-  return fetch(`${url}`, {
+  return fetch(url, {
     headers: {
       Authorization: `Bearer ${access_token}`,
     },
@@ -102,33 +94,31 @@ const spotifyCurrentTrack = async () => {
     $('#sp-artist, #sp-albumName, #sp-albumImg, #sp-link').empty();
   } else if (response.status === 200) {
     const song = await response.json();
-    const isPlaying = song.is_playing;
-    if (!isPlaying) {
-      $('#sp-title').text(`Music is not playing`);
+    const currentSong = {
+      isPlaying: song.is_playing,
+      repeat: song.repeat_state,
+      shuffle: song.shuffle_state,
+      volume: song.device.volume_percent,
+      title: song.item.name,
+      artist: song.item.artists.map((_artist) => _artist.name).join(', '),
+      album: song.item.album.name,
+      albumImageUrl: song.item.album.images[0].url,
+      songUrl: song.item.external_urls.spotify,
+      songUri: song.item.uri,
+    };
+    if (!currentSong.isPlaying) {
+      $('#sp-title').text(`Music isn't playing`);
       $('#sp-artist, #sp-albumName, #sp-albumImg, #sp-link').empty();
       $('#btn-pp img').attr('src', '/images/play.svg');
     } else {
-      const title = song.item.name;
-      const artist = song.item.artists.map((_artist) => _artist.name).join(', ');
-      const album = song.item.album.name;
-      const albumImageUrl = song.item.album.images[0].url;
-      const songUrl = song.item.external_urls.spotify;
-      const songUri = song.item.uri;
-      const currentSong = [
-        { title: title },
-        { artist: artist },
-        { album: album },
-        { albumImageUrl: albumImageUrl },
-        { songUrl: songUrl },
-        { songUri: songUri }
-      ];
-      $('#sp-title').text(title);
-      $('#sp-artist').text(artist);
-      // $('#sp-albumName').text(album);
-      $('#sp-albumImg').html(`<img src="${albumImageUrl}">`);
+      $('#sp-title').text(currentSong.title);
+      $('#sp-artist').text(currentSong.artist);
+      // $('#sp-albumName').text(currentSong.album);
+      $('#sp-albumImg').html(`<img src="${currentSong.albumImageUrl}">`);
       $('#btn-pp img').attr('src', '/images/pause.svg');
     }
-    return song.item;
+    // return song;     // full data
+    return currentSong; // minimum song data
   }
 };
 /* EVENTS */
@@ -193,9 +183,7 @@ client.on('chat', (channel, tags, message, self) => {
       /* --- Spotify --- */
       case 'song':
         spotifyCurrentTrack().then(res => {
-          typeof res === 'object'
-            ? client.action(channel, `${res.artists.map((_artist) => _artist.name).join(', ')} - ${res.name} 👇 ${res.external_urls.spotify}`)
-            : client.action(channel, `Spotify offline`);
+          client.action(channel, res.isPlaying === true ? `${res.artist} - ${res.title} 👇 ${res.songUrl}` : `Music isn't playing`);
         });
         break;
       /* --- Twitch --- */
@@ -509,13 +497,29 @@ function user_info() {
     let x = el.currentTarget;
     $(x).next().length == 0 ? $(x).parent().append(userInfo) : $(x).next().remove();
   });
-}
+};
 function close() {
   $('.chat').on('click', '#close', (el) => {
     let x = el.currentTarget;
     $(x).parent().remove();
   });
-}
+};
+function info() {
+  $('.chat').on('click', '#user-pic', (el) => {
+    let x = el.currentTarget;
+    let y = $(x).parents().eq(2).find('#ch-user').text().toLowerCase();
+
+    useTwitchToken(TWITCH.user, `login=${y}`).then(res => res.json()).then(res => {
+      console.log(res.data[0]);
+    });
+    useTwitchToken(`https://api.twitch.tv/helix/users/follows`,`to_id=${CREDENTIALS.twitch_user_id}`).then(res => res.json()).then(res => {
+      // console.log(res.data[0].followed_at);
+      let x = res.data[0].followed_at;
+      let y = x.split('T').shift();
+      console.log(y.split('-').reverse().join(' '));
+    });
+  });
+};
 
 class Bot extends React.Component {
   async componentDidMount() {
@@ -528,73 +532,58 @@ class Bot extends React.Component {
     obs();
     user_info();
     close();
+    info();
   }
 
   /* SPOTIFY FUNCTIONS */
   async updSongInfo() {
-    const res = await getPlaybackState();
-    if (res.status === 204 || res.status > 400) {
-      $('#sp-title').text('Response Error');
+    const response = await getPlaybackState();
+    if (response.status === 204) {
+      $('#sp-title').text(`Spotify offline`);
       $('#sp-artist, #sp-albumName, #sp-albumImg, #sp-link').empty();
-    } else if (res.status === 200) {
-      const song = await res.json();
-      const isPlaying = song.is_playing;
-      if (!isPlaying) {
-        $('#sp-title').text('Music is not playing');
+    } else if (response.status > 400) {
+      $('#sp-title').text(`Response error`);
+      $('#sp-artist, #sp-albumName, #sp-albumImg, #sp-link').empty();
+    } else if (response.status === 200) {
+      const song = await response.json();
+      if (!song.is_playing) {
+        $('#sp-title').text(`Music isn't playing`);
         $('#sp-artist, #sp-albumName, #sp-albumImg, #sp-link').empty();
         $('#btn-pp img').attr('src', '/images/play.svg');
       } else {
-        const title = song.item.name;
-        const artist = song.item.artists.map((_artist) => _artist.name).join(', ');
-        const album = song.item.album.name;
-        const albumImageUrl = song.item.album.images[0].url;
-        const songUrl = song.item.external_urls.spotify;
-        const songUri = song.item.uri;
-        const currentSong = [
-          { title: title },
-          { artist: artist },
-          { album: album },
-          { albumImageUrl: albumImageUrl },
-          { songUrl: songUrl },
-          { songUri: songUri }
-        ];
-        $('#sp-title').text(title);
-        $('#sp-artist').text(artist);
-        $('#sp-albumImg').html(`<img src="${albumImageUrl}">`);
+        $('#sp-title').text(song.item.name);
+        $('#sp-artist').text(song.item.artists.map((_artist) => _artist.name).join(', '));
+        $('#sp-albumImg').html(`<img src="${song.item.album.images[0].url}">`);
         $('#btn-pp img').attr('src', '/images/pause.svg');
       };
     };
   }
   /* response only with spotify premium 👇 */
-  async shuffle() {
-    let x;
-    const res = await getPlaybackState().then(res => res.json()).then(res => res.shuffle_state);
-    res == false ? x = true : x = false;
-    await useSpotifyTokenPut(SPOTIFY.shuffle, `state=${x}`);
+  shuffle() {
+    spotifyCurrentTrack().then(res => {
+      useSpotifyToken(`${SPOTIFY.shuffle}?state=${res.shuffle == false ? true : false}`);
+    });
   }
-  async repeat() {
-    let x;
-    const res = await getPlaybackState().then(res => res.json()).then(res => res.repeat_state);
-    res == 'off' ? x = 'track' : x = 'off';
-    await useSpotifyTokenPut(SPOTIFY.repeat, `state=${x}`);
+  repeat() {
+    spotifyCurrentTrack().then(res => {
+      useSpotifyToken(`${SPOTIFY.repeat}?state=${res.repeat == 'off' ? 'track' : 'off'}`);
+    });
   }
-  async skipToNext() {
-    await useSpotifyTokenPost(SPOTIFY.next);
+  skipToNext() {
+    useSpotifyToken(SPOTIFY.next);
   }
-  async skipToPrev() {
-    await useSpotifyTokenPost(SPOTIFY.previous);
+  skipToPrev() {
+    useSpotifyToken(SPOTIFY.previous);
   }
-  async pauseResume() {
-    let x;
-    const res = await getPlaybackState().then(res => res.json()).then(res => res.is_playing);
-    res == true ? x = SPOTIFY.pause : SPOTIFY.play;
-    await useSpotifyTokenPut(x, ``);
+  pauseResume() {
+    spotifyCurrentTrack().then(res => {
+      useSpotifyToken(res == true ? SPOTIFY.pause : SPOTIFY.play);
+    });
   }
-  async mute() {
-    let x;
-    const res = await getPlaybackState().then(res => res.json()).then(res => res.device.volume_percent);
-    res != 0 ? x = 0 : x = res;
-    await useSpotifyTokenPut(SPOTIFY.volume, `volume_percent=${x}`);
+  mute() {
+    spotifyCurrentTrack().then(res => {
+      useSpotifyToken(`${SPOTIFY.volume}?volume_percent=${res.volume != 0 ? 0 : res.volume}`);
+    });
   }
 
   /* RENDER VIEW */
