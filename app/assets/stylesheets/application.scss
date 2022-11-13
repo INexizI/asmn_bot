@@ -8,8 +8,7 @@ html, body {}
 
 body {
   margin: auto;
-  // background: #757575; // my color
-  background: #181818; // spotify bg
+  background: #181818;
   font-family: 'Quicksand', sans-serif;
   font-size: large;
   font-weight: bold;
@@ -39,36 +38,35 @@ body {
 }
 
 .song {
-  // margin: 50px;
-  margin-top: 50px;
+  display: flex;
   justify-content: center;
-  display: grid;
-  // grid-template-columns: 100px auto;
-  // grid-template-rows: 50px 50px;
-  grid-template-columns: 40px auto;
-  grid-template-rows: 20px 20px;
   gap: 0px 10px;
-  grid-auto-flow: row;
-  grid-template-areas: "s1 s2" "s1 s3";
+  margin-top: 50px;
+  height: 54px;
 
-  #sp-albumImg, #sp-albumImg img  {
-    width: 40px;
-    height: 40px;
+  p {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-evenly;
+
+    #sp-title {
+      color: #fff;
+      font-size: 14px;
+    }
+    #sp-artist {
+      color: #b3b3b3;
+      font-size: 12px;
+    }
   }
-  #sp-albumImg {
-    grid-area: s1;
-  }
-  #sp-title {
-    grid-area: s2;
-    color: #1db954;
-    font-size: 16px;
-    font-weight: 400;
-  }
-  #sp-artist {
-    grid-area: s3;
-    color: #fff;
-    font-size: 14px;
-    font-weight: 400;
+}
+
+.song, #sp {
+  font-family: var(--font-family,CircularSp,CircularSp-Arab,CircularSp-Hebr,CircularSp-Cyrl,CircularSp-Grek,CircularSp-Deva,var(--fallback-fonts,sans-serif));
+  font-weight: 400;
+
+  img {
+    width: 54px;
+    height: 54px;
   }
 }
 
@@ -116,6 +114,7 @@ body {
     margin: 3px;
     box-shadow: inset 0 0 10px -5px #fff;
     background: #fffafa33;
+
     p { display: flex; }
     #user-badge {
       height: 0;
@@ -168,18 +167,19 @@ body {
       border-radius: 5px;
       padding: 10px;
 
-      img {
-        width: 64px;
-        height: 64px;
-      }
       p {
-        font-size: 15px;
         padding: 0 5px;
         flex-direction: column;
         justify-content: space-evenly;
 
-        #sp-n { color: #1db954; }
-        #sp-a { color: #fff; }
+        #sp-n {
+          color: #1db954;
+          font-size: 16px;
+        }
+        #sp-a {
+          color: #b3b3b3;
+          font-size: 14px;
+        }
       }
     }
   }

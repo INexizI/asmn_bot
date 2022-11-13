@@ -102,7 +102,7 @@ const spotifyCurrentTrack = async () => {
       title: song.item.name,
       artist: song.item.artists.map((_artist) => _artist.name).join(', '),
       album: song.item.album.name,
-      albumImageUrl: song.item.album.images[0].url,
+      albumImageUrl: song.item.album.images[2].url,
       songUrl: song.item.external_urls.spotify,
       songUri: song.item.uri,
     };
@@ -496,6 +496,14 @@ function user_info() {
   $('.chat').on('click', '#ch-user', (el) => {
     let x = el.currentTarget;
     $(x).next().length == 0 ? $(x).parent().append(userInfo) : $(x).next().remove();
+
+    useTwitchToken(TWITCH.user, `login=${$(x).text().toLowerCase()}`).then(res => res.json()).then(res => {
+      console.log(res.data[0]);
+      $(x).next().find('p:eq(0)').css({
+        'background': `center/cover no-repeat url(${res.data[0].offline_image_url})`,
+        'height': '100px'
+      });
+    });
   });
 };
 function close() {
@@ -595,8 +603,10 @@ class Bot extends React.Component {
       ),
       e("div", { key: "song", className: "song" },
         e("p", { id: "sp-albumImg" }, null),
-        e("p", { id: "sp-title" }, null),
-        e("p", { id: "sp-artist" }, null)
+        e("p", null,
+          e("span", { id: "sp-title" }, null),
+          e("span", { id: "sp-artist" }, null)
+        )
       ),
       e("div", { key: "btn", className: "btn" },
         e("button", { id: "btn-info", onClick: this.updSongInfo }, "Update Info"),
