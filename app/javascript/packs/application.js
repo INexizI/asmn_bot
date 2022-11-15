@@ -4,7 +4,6 @@ import * as ActiveStorage from "@rails/activestorage"
 import "channels"
 import "controllers"
 import jquery from "jquery"
-window.jQuery = jquery
 window.$ = jquery
 
 import tmi from "tmi.js"

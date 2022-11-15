@@ -1,14 +1,24 @@
-import React, { Component, createElement, useState } from "react";
-import styled from "styled-components";
-import { Modal } from "./Modal";
-import { GlobalStyle } from "../packs/globalStyle";
+import React, { Component, useState } from "react";
 import CryptoJS from "crypto-js";
 import tmi from 'tmi.js';
 import jquery from "jquery";
 window.$ = jquery;
 
-const e = createElement;
-const { CREDENTIALS, TWITCH, SPOTIFY, SMILE, MESSAGE, BOT_CONFIG, EMOTES, SOUND_COMMAND, BAN_LIST, CHAT_BAN_PHRASE, ANNOUNCE_LIST, SITE_WHITELIST, REGEXP } = require('../packs/config');
+const {
+  CREDENTIALS,
+  TWITCH,
+  SPOTIFY,
+  SMILE,
+  MESSAGE,
+  BOT_CONFIG,
+  EMOTES,
+  SOUND_COMMAND,
+  BAN_LIST,
+  CHAT_BAN_PHRASE,
+  ANNOUNCE_LIST,
+  SITE_WHITELIST,
+  REGEXP
+} = require('../packs/config');
 
 const queryString = require('query-string');
 const Buffer = require('buffer/').Buffer;
@@ -243,7 +253,7 @@ async function onMessageHandler(channel, tags, message, self) {
   const r = message.replace(REGEXP.message);
 
   /*
-  // FIXME(D): high latency on callback/return user profile picture
+  FIXME(D): high latency on callback/return user profile picture
   const { profile_image_url } = await getUserInfo(client, message, tags, channel, self);
   <span><img src=${profile_image_url} id="ch-user-pic"></span>
   */
@@ -277,7 +287,7 @@ function replaceElements(e) {
       switch (checkWL.name) {
         case 'Spotify':
           $.ajax({
-            url: "https://accounts.spotify.com/api/token",
+            url: `${SPOTIFY.token}`,
             headers: {
               'Authorization': `Basic ${basic}`,
               'Content-Type': 'application/x-www-form-urlencoded'
@@ -378,6 +388,7 @@ function announceMessage(client, channel) {
     announceCount = 0;
 };
 
+// get all emote arrays (Twitch, TV, FFZ, 7TV) and join them into one
 const getAllEmotes = async () => {
   await useTwitchToken(TWITCH.emotes_global).then(res => res.json()).then(res => {
     let x = [];
@@ -444,32 +455,6 @@ $.each([
 });
 
 /* ADD NEW */
-const userInfo = (`
-  <div id="user-info">
-    <p>
-      <span id="user-pic">Info</span>
-    </p>
-    <hr>
-    <p>
-      <span id="toUnban">
-        <img src="/images/check-circle.svg" id="ch-badge" title="Unban">
-      </span>
-      <span id="to600" title="10 min">10m</span>
-      <span id="to3600" title="1 hour">1h</span>
-      <span id="to86400" title="1 day">1d</span>
-      <span id="to604800" title="1 week">1w</span>
-      <span id="toBan">
-        <img src="/images/slash.svg" id="ch-badge" title="Ban">
-      </span>
-      <span id="toDelete">
-        <img src="/images/trash-2.svg" id="ch-badge" title="Delete message">
-      </span>
-    </p>
-    <span id="close">
-      <img src="/images/x.svg" id="ch-badge">
-    </span>
-  </div>`);
-
 function obs() {
   // select the node that will be observed for mutations
   const target = document.getElementById('chat-block');
@@ -495,15 +480,15 @@ function obs() {
 function user_info() {
   $('.chat').on('click', '#ch-user', (el) => {
     let x = el.currentTarget;
-    $(x).next().length == 0 ? $(x).parent().append(userInfo) : $(x).next().remove();
-
-    useTwitchToken(TWITCH.user, `login=${$(x).text().toLowerCase()}`).then(res => res.json()).then(res => {
-      console.log(res.data[0]);
-      $(x).next().find('p:eq(0)').css({
-        'background': `center/cover no-repeat url(${res.data[0].offline_image_url})`,
-        'height': '100px'
+    // FIXME(D): try Promise.all() ?!
+    if ($(x).next().length == 0) {
+      $(x).parent().append(userInfo);
+      useTwitchToken(TWITCH.user, `login=${$(x).text().toLowerCase()}`).then(res => res.json()).then(res => {
+        $(x).next().find('#user-pic').append(`<img src=${res.data[0].profile_image_url}>`);
+        $(x).next().find('p:eq(0)').css('background', `top/cover no-repeat linear-gradient(to right, rgba(255, 255, 255, 0.5) 0 100%), url(${res.data[0].offline_image_url}) top / cover no-repeat`);
       });
-    });
+    } else
+      $(x).next().remove()
   });
 };
 function close() {
@@ -512,37 +497,98 @@ function close() {
     $(x).parent().remove();
   });
 };
-function info() {
-  $('.chat').on('click', '#user-pic', (el) => {
-    let x = el.currentTarget;
-    let y = $(x).parents().eq(2).find('#ch-user').text().toLowerCase();
 
-    useTwitchToken(TWITCH.user, `login=${y}`).then(res => res.json()).then(res => {
-      console.log(res.data[0]);
-    });
-    useTwitchToken(`https://api.twitch.tv/helix/users/follows`,`to_id=${CREDENTIALS.twitch_user_id}`).then(res => res.json()).then(res => {
-      // console.log(res.data[0].followed_at);
-      let x = res.data[0].followed_at;
-      let y = x.split('T').shift();
-      console.log(y.split('-').reverse().join(' '));
-    });
-  });
-};
+const userInfo = (`
+  <div id="user-info">
+    <p id="info">
+      <span id="user-pic"></span>
+      <span>Info</span>
+    </p>
+    <hr/>
+    <p>
+      <span id="toUnban">
+        <img src="/images/check-circle.svg" id="ch-badge" title="Unban"/>
+      </span>
+      <span id="to600" title="10 min">10m</span>
+      <span id="to3600" title="1 hour">1h</span>
+      <span id="to86400" title="1 day">1d</span>
+      <span id="to604800" title="1 week">1w</span>
+      <span id="toBan">
+        <img src="/images/slash.svg" id="ch-badge" title="Ban"/>
+      </span>
+      <span id="toDelete">
+        <img src="/images/trash-2.svg" id="ch-badge" title="Delete message"/>
+      </span>
+    </p>
+    <span id="close">
+      <img src="/images/x.svg" id="ch-badge"/>
+    </span>
+  </div>`);
 
-class Bot extends React.Component {
+/* VEIW ELEMENTS */
+const UserInfo = () => (
+  <div id="user-info">
+    <p>
+      <span id="user-pic">Info</span>
+    </p>
+    <hr/>
+    <p>
+      <span id="toUnban">
+        <img src="/images/check-circle.svg" id="ch-badge" title="Unban"/>
+      </span>
+      <span id="to600" title="10 min">10m</span>
+      <span id="to3600" title="1 hour">1h</span>
+      <span id="to86400" title="1 day">1d</span>
+      <span id="to604800" title="1 week">1w</span>
+      <span id="toBan">
+        <img src="/images/slash.svg" id="ch-badge" title="Ban"/>
+      </span>
+      <span id="toDelete">
+        <img src="/images/trash-2.svg" id="ch-badge" title="Delete message"/>
+      </span>
+    </p>
+    <span id="close">
+      <img src="/images/x.svg" id="ch-badge"/>
+    </span>
+  </div>
+);
+class Chat extends Component {
   async componentDidMount() {
     await getAllEmotes();
     await getAllBadges();
+    // get current song and update each 10 seconds
     await spotifyCurrentTrack();
-    setInterval(() => spotifyCurrentTrack(), 10000);
+    setInterval(() => {
+      getPlaybackState().then(res => res.json()).then(res => {
+        // call only track changes
+        if ($('#sp-title').text() !== res.item.name) spotifyCurrentTrack()
+      });
+    }, 10000);
 
-    // NOTE(D): sort out these functions in places
     obs();
     user_info();
     close();
-    info();
   }
 
+  render() {
+    return [
+      <div className="img" key="img">
+        <div className="chat" id="chat-block" />
+        <iframe src={`https://www.twitch.tv/embed/${CREDENTIALS.twitch_user_name}/chat?parent=${window.location.hostname}`} id="chat" frameBorder="0" title="Chat" />
+      </div>
+    ]
+  }
+};
+const Song = () => (
+  <div className="song" key="song">
+    <p id="sp-albumImg"/>
+    <p>
+      <span id="sp-title"/>
+      <span id="sp-artist"/>
+    </p>
+  </div>
+);
+class Button extends Component {
   /* SPOTIFY FUNCTIONS */
   async updSongInfo() {
     const response = await getPlaybackState();
@@ -566,7 +612,7 @@ class Bot extends React.Component {
       };
     };
   }
-  /* response only with spotify premium 👇 */
+  // NOTE(D): response only with spotify premium 👇
   shuffle() {
     spotifyCurrentTrack().then(res => {
       useSpotifyToken(`${SPOTIFY.shuffle}?state=${res.shuffle == false ? true : false}`);
@@ -593,32 +639,32 @@ class Bot extends React.Component {
       useSpotifyToken(`${SPOTIFY.volume}?volume_percent=${res.volume != 0 ? 0 : res.volume}`);
     });
   }
-
   /* RENDER VIEW */
   render() {
     return [
-      e("div", { key: "img", className: "img" },
-        e("div", { className: "chat", id: "chat-block" }, null),
-        e("iframe", { id:"chat", src: `https://www.twitch.tv/embed/${CREDENTIALS.twitch_user_name}/chat?parent=localhost`, frameBorder: "0", title: "Chat"}, null)
-      ),
-      e("div", { key: "song", className: "song" },
-        e("p", { id: "sp-albumImg" }, null),
-        e("p", null,
-          e("span", { id: "sp-title" }, null),
-          e("span", { id: "sp-artist" }, null)
-        )
-      ),
-      e("div", { key: "btn", className: "btn" },
-        e("button", { id: "btn-info", onClick: this.updSongInfo }, "Update Info"),
-        e("div", { className: "btn-ctrl" },
-          e("button", { id: "btn-shuffle", onClick: this.shuffle }, e("img", { src: '/images/shuffle.svg' }, null)),
-          e("button", { id: "btn-previous", onClick: this.skipToPrev }, e("img", { src: '/images/skip-back.svg' }, null)),
-          e("button", { id: "btn-pp", onClick: this.pauseResume }, e("img", { src: '/images/play.svg' }, null)),
-          e("button", { id: "btn-forward", onClick: this.skipToNext }, e("img", { src: '/images/skip-forward.svg' }, null)),
-          e("button", { id: "btn-repeat", onClick: this.repeat }, e("img", { src: '/images/repeat.svg' }, null)),
-          e("button", { id: "btn-mute", onClick: this.mute }, e("img", { src: '/images/volume-x.svg' }, null))
-        )
-      )
+      <div className="btn" key="btn">
+        <button id="btn-info" onClick={this.updSongInfo}>Update Info</button>
+        <div>
+          <button id="btn-shuffle" onClick={this.shuffle}>
+            <img src="/images/shuffle.svg" />
+          </button>
+          <button id="btn-previous" onClick={this.skipToPrev}>
+            <img src="/images/skip-back.svg" />
+          </button>
+          <button id="btn-pp" onClick={this.pauseResume}>
+            <img src="/images/play.svg" />
+          </button>
+          <button id="btn-forward" onClick={this.skipToNext}>
+            <img src="/images/skip-forward.svg" />
+          </button>
+          <button id="btn-repeat" onClick={this.repeat}>
+            <img src="/images/repeat.svg" />
+          </button>
+          <button id="btn-mute" onClick={this.mute}>
+            <img src="/images/volume-x.svg" />
+          </button>
+        </div>
+      </div>
     ]
   }
 };
@@ -629,6 +675,10 @@ const App = () => {
     setShowModal(prev => !prev)
   }
 
-  return <Bot />
+  return (<>
+    <Chat />
+    <Song />
+    <Button />
+  </>)
 }
 export default App
