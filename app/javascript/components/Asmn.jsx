@@ -488,7 +488,7 @@ function user_info() {
         $(x).next().find('p:eq(0)').css('background', `top/cover no-repeat linear-gradient(to right, rgba(255, 255, 255, 0.5) 0 100%), url(${res.data[0].offline_image_url}) top / cover no-repeat`);
       });
     } else
-      $(x).next().remove()
+      $(x).next().remove();
   });
 };
 function close() {
@@ -559,9 +559,10 @@ class Chat extends Component {
     // get current song and update each 10 seconds
     await spotifyCurrentTrack();
     setInterval(() => {
-      getPlaybackState().then(res => res.json()).then(res => {
+      getPlaybackState().then(res => res.status == 200 ? res.json() : '').then(res => {
         // call only track changes
-        if ($('#sp-title').text() !== res.item.name) spotifyCurrentTrack()
+        if (typeof res == 'object')
+          $('#sp-title').text() !== res.item.name ? spotifyCurrentTrack() : ''
       });
     }, 10000);
 
