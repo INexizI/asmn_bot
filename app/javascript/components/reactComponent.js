@@ -1,6 +1,6 @@
 import React from "react";
 import { createRoot } from "react-dom/client";
-import Asmn from "./Asmn.jsx";
+import Asmn from "./Asmn";
 
 function renderApp(props, node) {
   const root = createRoot(node);
