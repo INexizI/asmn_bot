@@ -5,6 +5,9 @@
   "author": "INexizI",
   "license": "MIT",
   "private": true,
+  "scripts": {
+    "start": "rails s -b 'ssl://localhost:5000?key=./localhost.key&cert=./localhost.crt'"
+  },
   "dependencies": {
     "@babel/preset-react": "^7.18.6",
     "@rails/actioncable": "^7.0.4",
