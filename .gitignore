@@ -36,9 +36,8 @@
 localhost.crt
 localhost.key
 
-/public/images
 /public/packs
-/public/sounds
+/public/sounds/*.wav
 /public/packs-test
 /node_modules
 /yarn-error.log
@@ -46,3 +45,10 @@ yarn-debug.log*
 .yarn-integrity
 
 *.old
+
+/public/packs
+/public/packs-test
+/node_modules
+/yarn-error.log
+yarn-debug.log*
+.yarn-integrity
