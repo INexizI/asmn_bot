@@ -6,7 +6,8 @@
   "license": "MIT",
   "private": true,
   "scripts": {
-    "start": "rails s -b 'ssl://localhost:5000?key=./localhost.key&cert=./localhost.crt'"
+    "start": "rails s -b 'ssl://localhost:5000?key=./localhost.key&cert=./localhost.crt'",
+    "keys": "openssl req -x509 -sha256 -nodes -newkey rsa:2048 -days 365 -keyout localhost.key -out localhost.crt"
   },
   "dependencies": {
     "@babel/preset-react": "^7.18.6",
