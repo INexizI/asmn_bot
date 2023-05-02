@@ -1,4 +1,4 @@
-import React, { Component, useState } from "react";
+import React, { Component } from "react";
 import CryptoJS from "crypto-js";
 import tmi from 'tmi.js';
 import jquery from "jquery";
@@ -181,7 +181,7 @@ client.on('chat', (channel, tags, message, self) => {
   let messageType = msg.charAt(0);
 
   /*
-    NOTE(D): old method for commands
+  NOTE(D): old method for commands
   const [raw, command, argument] = message.match(regexpCommand);
   const { response } = commands[command] || {};
   typeof response === 'function' ? client.action(channel, response(tags.username)) : client.action(channel, response);
@@ -240,24 +240,22 @@ client.on('chat', (channel, tags, message, self) => {
     audio.play();
   } else {
     const ban = banCheck(msg);
-    ban ? client.deletemessage(channel, tags.id) : onMessageHandler(channel, tags, message, self);
+    ban ? client.deletemessage(channel, tags.id) : onMessageHandler(tags, message);
     /*
-      NOTE(D): to banned user, use this string below 👇
+    NOTE(D): to banned user, use this string below 👇
     ban ? client.ban(channel, username, reason) : onMessageHandler(channel, tags, message, self);
     */
   };
 
 });
 /* FUNCTIONS */
-async function onMessageHandler(channel, tags, message, self) {
+const onMessageHandler = async (tags, message) => {
   const r = message.replace(REGEXP.message);
-
   /*
   FIXME(D): high latency on callback/return user profile picture
   const { profile_image_url } = await getUserInfo(client, message, tags, channel, self);
   <span><img src=${profile_image_url} id="ch-user-pic"></span>
   */
-
   const cryptData = CryptoJS.AES.encrypt(tags.id, CREDENTIALS.crypto_key).toString();
 
   const b = replaceBadge(tags.badges);
@@ -274,7 +272,7 @@ async function onMessageHandler(channel, tags, message, self) {
   `).animate({scrollTop: $('.chat').prop('scrollHeight')}, 1000);
   clearChat();
 };
-function replaceElements(e) {
+const replaceElements = e => {
   let m = [];
   let emotes = allEmotes;
   $.each(e.split(' '), async (i, n) => {
@@ -344,7 +342,7 @@ function replaceElements(e) {
   });
   return e = m.join(' ');
 };
-function replaceBadge(b) {
+const replaceBadge = b => {
   let badge = '';
   b === null ? badge = `<img src="https://static.twitchcdn.net/assets/dark-649b4a4625649be7bf30.svg" id="ch-badge">` : $.each(Object.keys(b), function(i, n) {
     const result = allBadges.find(({ name }) => name === n);
@@ -352,7 +350,7 @@ function replaceBadge(b) {
   });
   return badge;
 };
-function getMetaData(md) {
+const getMetaData = md => {
   let x = [];
   $.each(md, function(i, n) {
     // if (n.nodeName.toString().toLowerCase() == 'meta' && $(n).attr("name") != null && typeof $(n).attr("name") != "undefined")
@@ -365,7 +363,7 @@ function getMetaData(md) {
   });
   return x;
 };
-function banCheck(w) {
+const banCheck = w => {
   let c = false;
   $.each(w.split(' '), function(i, n) {
     const checkWL = SITE_WHITELIST.find(({ link }) => link === n.split('/')[2]);
@@ -374,13 +372,13 @@ function banCheck(w) {
   });
   return c;
 };
-function clearChat() {
+const clearChat = () => {
   let msg_limit = $('.chat div').length;
   let msg_first = $('.chat').children(':first');
   if (msg_limit > MESSAGE.limit)
     msg_first.remove();
 };
-function announceMessage(client, channel) {
+const announceMessage = (client, channel) => {
   if (announceCount != ANNOUNCE_LIST.length) {
     client.say(channel, `/announce ${ANNOUNCE_LIST[announceCount].text}`);
     announceCount++;
@@ -421,7 +419,7 @@ const getAllBadges = async () => {
     allBadges = x;
   });
 };
-function replaceEmotes(data, type, scale) {
+const replaceEmotes = (data, type, scale) => {
   let x = [];
   $.each(data, function(i, n) {
     x.push({
@@ -447,7 +445,7 @@ $.each([
       scale = '1';
     } else {
       type = n.split('/')[2].slice(4);
-      scale = '1x';
+      scale = '1x.webp';
     }
     return x = replaceEmotes(res, type, scale);
   });
@@ -455,7 +453,7 @@ $.each([
 });
 
 /* ADD NEW */
-function obs() {
+const obs = () => {
   // select the node that will be observed for mutations
   const target = document.getElementById('chat-block');
   // options for the observer (which mutations to observe)
@@ -477,81 +475,57 @@ function obs() {
   // stop observing
   // observer.disconnect();
 };
-function user_info() {
+const user_info = () => {
   $('.chat').on('click', '#ch-user', (el) => {
     let x = el.currentTarget;
     // FIXME(D): try Promise.all() ?!
     if ($(x).next().length == 0) {
-      $(x).parent().append(userInfo);
+      $(x).parent().append(`
+        <div id="user-info">
+          <p id="info">
+            <span id="user-pic"></span>
+            <span>Info</span>
+          </p>
+          <hr/>
+          <p>
+            <span id="toUnban">
+              <img src="/images/check-circle.svg" id="ch-badge" title="Unban"/>
+            </span>
+            <span id="to600" title="10 min">10m</span>
+            <span id="to3600" title="1 hour">1h</span>
+            <span id="to86400" title="1 day">1d</span>
+            <span id="to604800" title="1 week">1w</span>
+            <span id="toBan">
+              <img src="/images/slash.svg" id="ch-badge" title="Ban"/>
+            </span>
+            <span id="toDelete">
+              <img src="/images/trash-2.svg" id="ch-badge" title="Delete message"/>
+            </span>
+          </p>
+          <span id="close">
+            <img src="/images/x.svg" id="ch-badge"/>
+          </span>
+        </div>`);
       useTwitchToken(TWITCH.user, `login=${$(x).text().toLowerCase()}`).then(res => res.json()).then(res => {
-        $(x).next().find('#user-pic').append(`<img src=${res.data[0].profile_image_url}>`);
-        $(x).next().find('p:eq(0)').css('background', `top/cover no-repeat linear-gradient(to right, rgba(255, 255, 255, 0.5) 0 100%), url(${res.data[0].offline_image_url}) top / cover no-repeat`);
+        $(x)
+          .next()
+          .find('#user-pic')
+          .append(`<img src=${res.data[0].profile_image_url}>`);
+        $(x)
+          .next()
+          .find('p:eq(0)')
+          .css('background', `top/cover no-repeat linear-gradient(to right, rgba(255, 255, 255, 0.5) 0 100%), url(${res.data[0].offline_image_url}) top / cover no-repeat`);
       });
     } else
       $(x).next().remove();
   });
 };
-function close() {
+const close = () => {
   $('.chat').on('click', '#close', (el) => {
-    let x = el.currentTarget;
-    $(x).parent().remove();
+    $(el.currentTarget).parent().remove();
   });
 };
 
-const userInfo = (`
-  <div id="user-info">
-    <p id="info">
-      <span id="user-pic"></span>
-      <span>Info</span>
-    </p>
-    <hr/>
-    <p>
-      <span id="toUnban">
-        <img src="/images/check-circle.svg" id="ch-badge" title="Unban"/>
-      </span>
-      <span id="to600" title="10 min">10m</span>
-      <span id="to3600" title="1 hour">1h</span>
-      <span id="to86400" title="1 day">1d</span>
-      <span id="to604800" title="1 week">1w</span>
-      <span id="toBan">
-        <img src="/images/slash.svg" id="ch-badge" title="Ban"/>
-      </span>
-      <span id="toDelete">
-        <img src="/images/trash-2.svg" id="ch-badge" title="Delete message"/>
-      </span>
-    </p>
-    <span id="close">
-      <img src="/images/x.svg" id="ch-badge"/>
-    </span>
-  </div>`);
-
-/* VEIW ELEMENTS */
-const UserInfo = () => (
-  <div id="user-info">
-    <p>
-      <span id="user-pic">Info</span>
-    </p>
-    <hr/>
-    <p>
-      <span id="toUnban">
-        <img src="/images/check-circle.svg" id="ch-badge" title="Unban"/>
-      </span>
-      <span id="to600" title="10 min">10m</span>
-      <span id="to3600" title="1 hour">1h</span>
-      <span id="to86400" title="1 day">1d</span>
-      <span id="to604800" title="1 week">1w</span>
-      <span id="toBan">
-        <img src="/images/slash.svg" id="ch-badge" title="Ban"/>
-      </span>
-      <span id="toDelete">
-        <img src="/images/trash-2.svg" id="ch-badge" title="Delete message"/>
-      </span>
-    </p>
-    <span id="close">
-      <img src="/images/x.svg" id="ch-badge"/>
-    </span>
-  </div>
-);
 class Chat extends Component {
   async componentDidMount() {
     await getAllEmotes();
@@ -671,15 +645,12 @@ class Button extends Component {
 };
 
 const App = () => {
-  const [showModal, setShowModal] = useState(false)
-  const openModal = () => {
-    setShowModal(prev => !prev)
-  }
-
-  return (<>
-    <Chat />
-    <Song />
-    <Button />
-  </>)
-}
+  return (
+    <>
+      <Chat />
+      <Song />
+      <Button />
+    </>
+  )
+};
 export default App

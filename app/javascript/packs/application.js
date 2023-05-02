@@ -6,7 +6,7 @@ import "controllers"
 import jquery from "jquery"
 window.$ = jquery
 
-import tmi from "tmi.js"
+// import tmi from "tmi.js"
 
 // require('packs/twitch')
 
