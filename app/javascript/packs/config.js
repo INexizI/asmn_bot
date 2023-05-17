@@ -44,10 +44,10 @@ const SPOTIFY = {
   track:          'https://api.spotify.com/v1/tracks'
 }
 const SMILE = {
-  bttv_global:  'https://api.betterttv.net/3/cached/emotes/global',
-  bttv_channel: 'https://api.betterttv.net/3/cached/users/twitch',
-  ffz_channel:  'https://api.betterttv.net/3/cached/frankerfacez/users/twitch',
-  seventv_global: 'https://api.7tv.app/v2/emotes/global',
+  bttv_global:     'https://api.betterttv.net/3/cached/emotes/global',
+  bttv_channel:    'https://api.betterttv.net/3/cached/users/twitch',
+  ffz_channel:     'https://api.betterttv.net/3/cached/frankerfacez/users/twitch',
+  seventv_global:  'https://api.7tv.app/v2/emotes/global',
   seventv_channel: 'https://api.7tv.app/v2/users'
 }
 /* MESSAGE VARIABLE */
@@ -66,7 +66,10 @@ const BOT_CONFIG = {
     reconnectDecay: 1.4,
     reconnectInterval: 1000
   },
-  channels: [ process.env.BOT_NAME ],
+  channels: [ 
+    // NOTE(D): add here channels to connect
+    process.env.BOT_NAME
+   ],
   identity: {
     username: process.env.BOT_NAME,
     password: process.env.BOT_PASSWORD,
@@ -80,16 +83,16 @@ const EMOTES = {
 };
 /* ALL SOUND COMMANDS */
 const SOUND_COMMAND = {
-  // FILE_NAME: SOUND_FILE.WAV
+  // NOTE(D): FILE_NAME: SOUND_FILE.WAV
 };
 /* ARRAYS */
-// ban-words
+// NOTE(D): ban-words
 const BAN_LIST = [
   { name: 'qwe', reason: 'qwe' },
   { name: 'asd', reason: 'asd' },
   { name: 'zxc', reason: 'zxc' }
 ];
-// ban phrase
+// NOTE(D): chat phrase after ban
 const CHAT_BAN_PHRASE = [
   { id: 1, text: 'Is permanently banned from this channel' },
   { id: 2, text: 'disintegrated' },
@@ -99,13 +102,13 @@ const CHAT_BAN_PHRASE = [
   add more vars
   */
 ];
-// announce messages
+// NOTE(D): announce messages
 const ANNOUNCE_LIST = [
   { text: 'qwe!' },
   { text: 'asd!' },
   { text: 'zxc!' }
 ];
-// site whitelist
+// NOTE(D): site whitelist
 const SITE_WHITELIST = [
   { id: 1, name: 'YouTube', link: 'www.youtube.com' },
   { id: 2, name: 'YouTube', link: 'youtu.be' },
@@ -114,7 +117,7 @@ const SITE_WHITELIST = [
   { id: 5, name: 'Spotify', link: 'open.spotify.com' },
   { id: 6, name: 'Spotify', link: 'api.spotify.com' }
 ];
-// RegExp
+// NOTE(D): RegExp
 const REGEXP = {
   command: (/^!([a-zA-Z0-9]+)(?:\W+)?(.*)?/),
   // message: (/(\<\/?\w+\ ?>)/g, '\*'),

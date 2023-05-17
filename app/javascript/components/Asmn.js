@@ -530,11 +530,11 @@ class Chat extends Component {
   async componentDidMount() {
     await getAllEmotes();
     await getAllBadges();
-    // get current song and update each 10 seconds
+    // NOTE(D): get current song and update each 10 seconds
     await spotifyCurrentTrack();
     setInterval(() => {
       getPlaybackState().then(res => res.status == 200 ? res.json() : '').then(res => {
-        // call only track changes
+        // NOTE(D): call only if track changes
         if (typeof res == 'object')
           $('#sp-title').text() !== res.item.name ? spotifyCurrentTrack() : ''
       });
@@ -575,6 +575,7 @@ class Button extends Component {
       $('#sp-artist, #sp-albumName, #sp-albumImg, #sp-link').empty();
     } else if (response.status === 200) {
       const song = await response.json();
+      console.log(song);
       if (!song.is_playing) {
         $('#sp-title').text(`Music isn't playing`);
         $('#sp-artist, #sp-albumName, #sp-albumImg, #sp-link').empty();
