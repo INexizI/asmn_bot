@@ -32,7 +32,7 @@
     "react-dom": "^18.2.0",
     "react-icons": "^4.10.1",
     "react-spring": "^9.6.1",
-    "stimulus": "^3.2.1",
+    "stimulus": "^3.2.2",
     "styled-components": "^5.3.7",
     "tmi.js": "^1.8.5",
     "turbolinks": "^5.2.0",
