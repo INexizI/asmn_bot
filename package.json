@@ -33,7 +33,7 @@
     "react-icons": "^4.10.1",
     "react-spring": "^9.7.3",
     "stimulus": "^3.2.2",
-    "styled-components": "^5.3.7",
+    "styled-components": "^5.3.11",
     "tmi.js": "^1.8.5",
     "turbolinks": "^5.2.0",
     "webpack": "^5.0.0",
