@@ -10,7 +10,7 @@
     "keys": "openssl req -x509 -sha256 -nodes -newkey rsa:2048 -days 365 -keyout localhost.key -out localhost.crt"
   },
   "dependencies": {
-    "@babel/preset-react": "^7.18.6",
+    "@babel/preset-react": "^7.24.1",
     "@rails/actioncable": "^7.0.7",
     "@rails/activestorage": "^7.0.7",
     "@rails/ujs": "^7.0.7",
