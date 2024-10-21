@@ -1,6 +1,6 @@
-(function() {
-  $(document).on("turbolinks:load", function() {
-    const queryString = require('query-string')
+(() => {
+  $(document).on("turbolinks:load", () => {
+    // const queryString = require('query-string')
     const Buffer = require('buffer/').Buffer
     const CryptoJS = require("crypto-js")
 
@@ -54,7 +54,11 @@
           Authorization: `Basic ${basic}`,
           'Content-Type': 'application/x-www-form-urlencoded',
         },
-        body: queryString.stringify({
+        // body: queryString.stringify({
+        //   grant_type: 'refresh_token',
+        //   refresh_token: CREDENTIALS.spotify_refresh_token
+        // }),
+        body: $.param({
           grant_type: 'refresh_token',
           refresh_token: CREDENTIALS.spotify_refresh_token
         }),
@@ -179,13 +183,13 @@
         res.repeat_state === 'track' ? $('#btn-repeat').addClass('on') : $('#btn-repeat').removeClass('on');
       }).then(spotifyCurrentTrack());
     };
-    $('#btn-info').click(() =>
+    $('#btn-info').on("click", () =>
       spotifyCurrentTrack().then(console.log(`Loading Spotify Data...`)).then(check_states()));
     $('#btn-next, #btn-forward').click(() =>
       nextSong().then(sleep(500).then(() => spotifyCurrentTrack())));
-    $('#btn-previous').click(() =>
+    $('#btn-previous').on("click", () =>
       prevSong().then(sleep(500).then(() => spotifyCurrentTrack())));
-    $('#btn-p').click(() => {
+    $('#btn-p').on("click", () => {
       getPlaybackState().then(res => res.json()).then(res => {
         if (res.is_playing === true) {
           pauseSong();
@@ -196,7 +200,7 @@
         }
       });
     });
-    $('#btn-shuffle').click(() => {
+    $('#btn-shuffle').on("click", () => {
       getPlaybackState().then(res => res.json()).then(res => {
         if (res.shuffle_state === true) {
           shuffleSong(false);
@@ -207,7 +211,7 @@
         }
       });
     });
-    $('#btn-repeat').click(() => {
+    $('#btn-repeat').on("click", () => {
       getPlaybackState().then(res => res.json()).then(res => {
         if (res.repeat_state === 'track') {
           repeatSong('off');
@@ -218,7 +222,7 @@
         }
       });
     });
-    $('#btn-mute').click(() =>
+    $('#btn-mute').on("click", () =>
       getPlaybackState().then(res => res.json()).then(res => res.device.volume_percent === 0 ? volumeSong(40) : volumeSong(0)));
     setInterval(() =>
       getPlaybackState().then(res => res.status === 200 ? check_states() : ''), 15000);
@@ -329,7 +333,7 @@
             getUserFollowTime(client, tags, channel);
             break;
           case 'ping':
-            client.ping().then(data => client.action(channel, `@${tags.username}, your ping is ${Math.floor(Math.round(data*1000))}ms`));
+            client.ping().then(data => client.action(channel, `@${tags.username}, your ping is ${Math.floor(Math.round(data * 1000))}ms`));
             break;
           case 'ban':
             client.action(channel, `${argument} ${CHAT_BAN_PHRASE[(Math.floor(Math.random() * CHAT_BAN_PHRASE.length))].text}`);
@@ -337,7 +341,7 @@
           /* --- Sound commands --- */
           case 'sound':
             let x = 'Sound commands:';
-            $.each(SOUND_COMMAND, function(i, n) {
+            $.each(SOUND_COMMAND, (i) => {
               x += ` #${i}`;
             });
             client.action(channel, x);
@@ -364,40 +368,39 @@
     });
 
     /* FUNCTIONS */
-    function onConnectedHandler(address, port) {
+    const onConnectedHandler = (address, port) => {
       console.log(`Bot Connected: ${address}:${port}`);
     };
-    function onDisconnectedHandler(reason) {
+    const onDisconnectedHandler = (reason) => {
       console.log(`Bot Disconnected: ${reason}`)
     };
-    function onHostedHandler (channel, username, viewers, autohost) {
+    const onHostedHandler = (channel, username, viewers, autohost) => {
       client.say(channel, `Thank you @${username} for the host of ${viewers}!`)
     };
-    function onRaidedHandler(channel, username, viewers) {
+    const onRaidedHandler = (channel, username, viewers) => {
       client.say(channel, `Thank you @${username} for the raid of ${viewers}!`)
     };
-    function onSubscriptionHandler(channel, username, method, message, tags) {
+    const onSubscriptionHandler = (channel, username, method, message, tags) => {
       client.say(channel, `Thank you @${username} for subscribing!`)
     };
-    function onCheerHandler(channel, tags, message)  {
+    const onCheerHandler = (channel, tags, message) => {
       client.say(channel, `Thank you @${tags.username} for the ${tags.bits} bits!`)
     };
-    function onGiftPaidUpgradeHandler(channel, username, sender, tags) {
+    const onGiftPaidUpgradeHandler = (channel, username, sender, tags) => {
       client.say(channel, `Thank you @${username} for continuing your gifted sub!`)
     };
-    function onHostingHandler(channel, target, viewers) {
+    const onHostingHandler = (channel, target, viewers) => {
       client.say(channel, `We are now hosting ${target} with ${viewers} viewers!`)
     };
-    function reconnectHandler() {
+    const reconnectHandler = () => {
       console.log('Reconnecting...')
     };
-    function resubHandler(channel, username, months, message, tags, methods) {
+    const resubHandler = (channel, username, months, message, tags, methods) => {
       const cumulativeMonths = tags['msg-param-cumulative-months']
       client.say(channel, `Thank you @${username} for the ${cumulativeMonths} sub!`)
     };
-    function subGiftHandler(channel, username, streakMonths, recipient, methods, tags) {
+    const subGiftHandler = (channel, username, streakMonths, recipient, methods, tags) => {
       client.say(channel, `Thank you @${username} for gifting a sub to ${recipient}}.`)
-
       // this comes back as a boolean from twitch, disabling for now
       // "msg-param-sender-count": false
       // const senderCount =  ~~tags["msg-param-sender-count"];
@@ -406,7 +409,7 @@
       // )
     };
 
-    async function onMessageHandler(channel, tags, message, self) {
+    const onMessageHandler = async (channel, tags, message, self) => {
       const r = message.replace(REGEXP.message);
 
       /*
@@ -428,45 +431,47 @@
             </p>
             <span id="ch-msg">${e}</span>
           </div>`)
-        .animate({scrollTop: $('.chat').prop('scrollHeight')}, 1000);
+        .animate({ scrollTop: $('.chat').prop('scrollHeight') }, 1000);
       clearChat();
     };
 
-    function replaceBadge(b) {
+    const replaceBadge = (b) => {
       let badge = '';
-      b === null ? badge = `<img src="https://static.twitchcdn.net/assets/dark-649b4a4625649be7bf30.svg" id="ch-badge">` : $.each(Object.keys(b), function(i, n) {
+      b === null ? badge = `<img src="https://static.twitchcdn.net/assets/dark-649b4a4625649be7bf30.svg" id="ch-badge">` : $.each(Object.keys(b), (i, n) => {
         const result = getAllBadges.find(({ name }) => name === n);
         badge += `<img src=${result.link} id="ch-badge">`;
       });
       return badge;
     };
-    function replaceElements(e) {
+    const replaceElements = (e) => {
       let m = [];
       let emotes = allEmotes;
-      $.each(e.split(' '), function(i, n) {
+      $.each(e.split(' '), (i, n) => {
         let urlCheck = n.split('/')[2];
-        const checkWL = SITE_WHITELIST.find(({link}) => link === urlCheck);
+        const checkWL = SITE_WHITELIST.find(({ link }) => link === urlCheck);
         const emote = emotes.find(({ name }) => name === n);
         if (emote)
           m.push(`<img src=${emote.link} id="ch-emote">`);
         else if (checkWL)
-          $.ajax({ url: n, type: 'get', dataType: 'html', async: false, success: function(data) {
-            let img;
-            let site;
-            data = $.parseHTML(data);
-            const meta = getMetaData(data);
-            site = meta.find(({name}) => name === 'twitter:site');
-            site.value == '@github' ? img = meta.find(({name}) => name === 'twitter:image:src') : img = meta.find(({name}) => name === 'twitter:image');
-            m.push(`<span id="ch-msg">${`<a href="${n}"><img src="${img.value}" id="ch-ythumb"></a>`}</span>`);
-          }});
+          $.ajax({
+            url: n, type: 'get', dataType: 'html', async: false, success: (data) => {
+              let img;
+              let site;
+              data = $.parseHTML(data);
+              const meta = getMetaData(data);
+              site = meta.find(({ name }) => name === 'twitter:site');
+              site.value == '@github' ? img = meta.find(({ name }) => name === 'twitter:image:src') : img = meta.find(({ name }) => name === 'twitter:image');
+              m.push(`<span id="ch-msg">${`<a href="${n}"><img src="${img.value}" id="ch-ythumb"></a>`}</span>`);
+            }
+          });
         else
           m.push(n);
       });
       return e = m.join(' ');
     };
-    function getMetaData(md) {
+    const getMetaData = (md) => {
       let x = [];
-      $.each(md, function(i, n) {
+      $.each(md, (i, n) => {
         if (n.nodeName.toString().toLowerCase() == 'meta' && $(n).attr("name") != null && typeof $(n).attr("name") != "undefined")
           x.push({
             name: $(n).attr('name'),
@@ -475,22 +480,22 @@
       });
       return x;
     };
-    function banCheck(w) {
+    const banCheck = (w) => {
       let c = false;
-      $.each(w.split(' '), function(i, n) {
-        const ban = BAN_LIST.find(({name}) => name === n);
+      $.each(w.split(' '), (i, n) => {
+        const ban = BAN_LIST.find(({ name }) => name === n);
         if (ban != undefined) c = true;
       });
       return c;
     };
-    function clearChat() {
+    const clearChat = () => {
       let msg_limit = $('.chat div').length;
       let msg_first = $('.chat').children(':first');
       if (msg_limit > MESSAGE.limit)
         msg_first.remove();
     };
 
-    function announceMessage(client, channel) {
+    const announceMessage = (client, channel) => {
       if (announceCount != ANNOUNCE_LIST.length) {
         client.say(channel, `/announce ${ANNOUNCE_LIST[announceCount].text}`);
         announceCount++;
@@ -499,14 +504,14 @@
     };
 
     /* COMMANDS */
-    async function getUserInfo(user) {
+    const getUserInfo = async (user) => {
       let param = $.param({
         login: user
       });
 
       return await useTwitchToken(TWITCH.user, param).then(res => res.json()).then(res => res.data[0]);
     };
-    async function getUserFollowTime(client, tags, channel) {
+    const getUserFollowTime = async (client, tags, channel) => {
       let param = $.param({
         to_id: CREDENTIALS.twitch_user_id,
         from_login: tags.username
@@ -551,37 +556,37 @@
     //   var q = `${year}y ${month}m ${day}d ${hour}h ${minute}m ${second}s after followed!`;
     //   return q;
     // };
-    async function getBadgesGlobal(client, message, tags, channel, self) {
+    const getBadgesGlobal = async (client, message, tags, channel, self) => {
       return await useTwitchToken(TWITCH.badges_global).then(res => res.json()).then(res => res.data);
     };
-    async function getChannelBadges(client, message, tags, channel, self) {
+    const getChannelBadges = async (client, message, tags, channel, self) => {
       const param = $.param({
         broadcaster_id: CREDENTIALS.twitch_user_id,
       });
 
       return await useTwitchToken(TWITCH.badges, param).then(res => res.json()).then(res => res.data);
     };
-    async function getEmotesGlobal(client, message, tags, channel, self) {
+    const getEmotesGlobal = async (client, message, tags, channel, self) => {
       return await useTwitchToken(TWITCH.emotes_global).then(res => res.json()).then(res => res.data);
     };
-    async function getChannelEmotes(client, message, tags, channel, self) {
+    const getChannelEmotes = async (client, message, tags, channel, self) => {
       const param = $.param({
         broadcaster_id: CREDENTIALS.twitch_user_id,
       });
 
       return await useTwitchToken(TWITCH.emotes, param).then(res => res.json()).then(res => res.data);
     };
-    async function getChannelEmotesSet(client, message, tags, channel, self) {
+    const getChannelEmotesSet = async (client, message, tags, channel, self) => {
       return client.emotesets;
     };
-    async function getStreamInfo(client, message, tags, channel, self) {
+    const getStreamInfo = async (client, message, tags, channel, self) => {
       const param = $.param({
         broadcaster_id: CREDENTIALS.twitch_user_id,
       });
 
       return useTwitchToken(TWITCH_CHANNEL, param).then(res => res.json()).then(res => res.data[0]);
     };
-    async function banUser(client, channel, user, duration) {
+    const banUser = async (client, channel, user, duration) => {
       const userData = await getUserInfo(user);
 
       client.timeout(channel, userData.login, duration, 'banned via ASMN');
@@ -589,7 +594,7 @@
 
     useTwitchToken(TWITCH.emotes_global).then(res => res.json()).then(res => {
       let x = [];
-      $.each(res.data, function(i, n) {
+      $.each(res.data, (i, n) => {
         x.push({
           id: n.id,
           name: n.name,
@@ -600,7 +605,7 @@
     });
     useTwitchToken(TWITCH.badges_global).then(res => res.json()).then(res => {
       let x = [];
-      $.each(res.data, function(i, n) {
+      $.each(res.data, (i, n) => {
         if (n.versions.length == 1)
           x.push({
             name: n.set_id,
@@ -616,9 +621,9 @@
       getAllBadges = x;
     });
 
-    function replaceEmotes(data, type, scale) {
+    const replaceEmotes = (data, type, scale) => {
       let x = [];
-      $.each(data, function(i, n) {
+      $.each(data, (i, n) => {
         x.push({
           id: n.id,
           name: n.code || n.name,
@@ -632,14 +637,18 @@
       SMILE.bttv_global,
       `${SMILE.bttv_channel}/${CREDENTIALS.twitch_user_id}`,
       `${SMILE.ffz_channel}/${CREDENTIALS.twitch_user_id}`,
-      SMILE.seventv_global,
-      `${SMILE.seventv_channel}/${CREDENTIALS.twitch_user_name}/emotes`
+      // SMILE.seventv_global,
+      // `${SMILE.seventv_channel}/${CREDENTIALS.twitch_user_name}/emotes`
+      `${SMILE.seventv_set}/${CREDENTIALS.seventv_user}`
     ], async (i, n) => {
       const e = await fetch(n).then(res => res.json()).then(res => {
-        !Array.isArray(res) ? res = res.sharedEmotes : res;
+        !Array.isArray(res) ? res = res.sharedEmotes || res.emotes : res;
         if (n.split('/')[5] === 'frankerfacez') {
           type = 'frankerfacez.com';
           scale = '1';
+        } else if (n.split('/')[2] === '7tv.io') {
+          type = '7tv.app';
+          scale = '1x.webp';
         } else {
           type = n.split('/')[2].slice(4);
           scale = '1x';

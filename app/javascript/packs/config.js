@@ -11,7 +11,8 @@ const CREDENTIALS = {
   spotify_client_secret_alt: process.env.SCLIENT_SECRET_ALT,
   spotify_refresh_token_alt: process.env.SREFRESH_TOKEN_ALT,
   crypto_key:                process.env.CRYPTO_KEY,
-  crypto_iv:                 process.env.CRYPTO_IV
+  crypto_iv:                 process.env.CRYPTO_IV,
+  seventv_user:              process.env.SEVENTV_USER_ID
 }
 /* ENDPOINTS */
 const TWITCH = {
@@ -47,8 +48,10 @@ const SMILE = {
   bttv_global:     'https://api.betterttv.net/3/cached/emotes/global',
   bttv_channel:    'https://api.betterttv.net/3/cached/users/twitch',
   ffz_channel:     'https://api.betterttv.net/3/cached/frankerfacez/users/twitch',
-  seventv_global:  'https://api.7tv.app/v2/emotes/global',
-  seventv_channel: 'https://api.7tv.app/v2/users'
+  // seventv_global:  'https://api.7tv.app/v2/emotes/global',
+  // seventv_channel: 'https://api.7tv.app/v2/users'
+  seventv_user:  'https://7tv.io/v3/users/twitch',
+  seventv_set:  'https://7tv.io/v3/emote-sets',
 }
 /* MESSAGE VARIABLE */
 const MESSAGE = {
@@ -66,7 +69,7 @@ const BOT_CONFIG = {
     reconnectDecay: 1.4,
     reconnectInterval: 1000
   },
-  channels: [ 
+  channels: [
     // NOTE(D): add here channels to connect
     process.env.BOT_NAME
    ],

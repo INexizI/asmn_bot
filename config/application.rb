@@ -20,7 +20,7 @@ end
 # you've limited to :test, :development, or :production.
 Bundler.require(*Rails.groups)
 
-Dotenv::Railtie.load
+Dotenv::Rails.load
 
 module AsmnBot
   class Application < Rails::Application

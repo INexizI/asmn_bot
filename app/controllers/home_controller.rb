@@ -12,8 +12,8 @@ class HomeController < ApplicationController
     }
 
     url = ENV['AUTHORIZE']
-
-    redirect_to "#{url}?#{query_params.to_query}"
+    external_url = "#{url}?#{query_params.to_query}"
+    redirect_to  external_url, allow_other_host: true
   end
 
   def q

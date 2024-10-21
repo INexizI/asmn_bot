@@ -6,9 +6,9 @@ import "controllers"
 import jquery from "jquery"
 window.$ = jquery
 
-// import tmi from "tmi.js"
+import tmi from "tmi.js"
 
-// require('packs/twitch')
+require('packs/twitch')
 
 Rails.start()
 Turbolinks.start()

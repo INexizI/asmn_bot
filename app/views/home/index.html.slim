@@ -1,32 +1,32 @@
-#asmn data-controller="react"
-/ .img
+.img
   / img src='/images/q.jpg' alt=''
   .chat
   iframe id="chat" src="https://www.twitch.tv/embed/a_s_m_n/chat?parent=localhost" frameborder="0" title="Chat"
 
-/ .song
+.song
   p#sp-albumImg
-  p#sp-title
-  p#sp-artist
+  p
+    span#sp-title
+    span#sp-artist
 
-/ .btn
+.btn
   button#btn-info Update Info
-  / button#btn-next Next
-  / br
-  / br
-  / .btn-ctrl
-  /   button#btn-shuffle
-  /     img src='/images/shuffle.svg'
-  /   button#btn-previous
-  /     img src='/images/skip-back.svg'
-  /   button#btn-p
-  /     img src='/images/play.svg'
-  /   button#btn-forward
-  /     img src='/images/skip-forward.svg'
-  /   button#btn-repeat
-  /     img src='/images/repeat.svg'
-  /   button#btn-mute
-  /     img src='/images/volume-x.svg'
+  button#btn-next Next
+  br
+  br
+  .btn-ctrl
+    button#btn-shuffle
+      img src='/images/shuffle.svg'
+    button#btn-previous
+      img src='/images/skip-back.svg'
+    button#btn-p
+      img src='/images/play.svg'
+    button#btn-forward
+      img src='/images/skip-forward.svg'
+    button#btn-repeat
+      img src='/images/repeat.svg'
+    button#btn-mute
+      img src='/images/volume-x.svg'
 
 / .time
   h1
@@ -39,12 +39,12 @@
 / .pl
   button#pl LOG
 
-  / .info
-    / = link_to '', target: '_blank', rel: 'noopener noreferrer', title: 'GitHub' do
+  .info
+    = link_to '', target: '_blank', rel: 'noopener noreferrer', title: 'GitHub' do
     img src='/images/github.svg'
-    / = link_to '', target: '_blank', rel: 'noopener noreferrer', title: 'Chat' do
+    = link_to '', target: '_blank', rel: 'noopener noreferrer', title: 'Chat' do
     img src='/images/twitch.svg'
-    / = link_to '', target: '_blank', rel: 'noopener noreferrer' do
+    = link_to '', target: '_blank', rel: 'noopener noreferrer' do
     img src='/images/link-2.svg'
-    / = link_to '', target: '_blank', rel: 'noopener noreferrer' do
+    = link_to '', target: '_blank', rel: 'noopener noreferrer' do
     img src='/images/alert-circle.svg'
