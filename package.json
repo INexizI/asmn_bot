@@ -38,7 +38,7 @@
     "@babel/core": "^7.17.9",
     "@babel/plugin-transform-runtime": "^7.17.0",
     "@babel/preset-env": "^7.16.11",
-    "webpack-dev-server": "^3",
+    "webpack-dev-server": "^5",
     "yarn-upgrade-all": "^0.7.1"
   }
 }
